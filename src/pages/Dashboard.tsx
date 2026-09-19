@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 import {
   TrendingUp,
   CreditCard,
@@ -22,6 +23,7 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
   const { language, t } = useLanguage();
   const { products, farmers, sales, payments, villages, districts } = useData();
+  const { user } = useAuth();
 
   // Metrics
   const todayStr = new Date().toISOString().split('T')[0];
@@ -61,10 +63,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
       <div className="bg-gradient-to-r from-emerald-800 to-emerald-950 text-white p-5 sm:p-7 rounded-2xl shadow-sm border border-emerald-700/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider bg-emerald-700/60 text-lime-300 px-2.5 py-1 rounded-full">
-            {language === 'hi' ? 'कृषि व्यापार नियंत्रण केंद्र' : 'Agri Retail Command Center'}
+            {user?.shopName || (language === 'hi' ? 'कृषि व्यापार नियंत्रण केंद्र' : 'Agri Retail Command Center')}
           </span>
           <h1 className="text-xl sm:text-2xl font-black mt-2 tracking-tight">
-            {language === 'hi' ? 'दुकानदार डैशबोर्ड' : 'Retailer Dashboard'}
+            {language === 'hi' ? `नमस्ते, ${user?.name || 'दुकानदार'}` : `Welcome, ${user?.name || 'Retailer'}`}
           </h1>
           <p className="text-emerald-200 text-xs sm:text-sm mt-1">
             {language === 'hi'

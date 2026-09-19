@@ -7,6 +7,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   signup: (email: string, password: string, name: string, shopName: string, phone: string) => Promise<{ success: boolean; message?: string }>;
   loginWithGoogle: () => Promise<{ success: boolean; message?: string }>;
+  updateProfile: (updatedData: Partial<User>) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
 }
 
@@ -19,6 +20,12 @@ const defaultUser: User = {
   email: 'somveer@agri.com',
   shopName: 'किसान सेवा एवं कृषि केंद्र (Kisan Seva Kendra)',
   phone: '9812001122',
+  address: 'मंडी रोड, बस स्टैंड के पास (Mandi Road)',
+  district: 'Mathura',
+  state: 'Uttar Pradesh',
+  licenseNo: 'UP-AGRI-SEED-2024/8892',
+  gstin: '09AAACA1234A1Z5',
+  receiptFooter: 'उधारी का भुगतान समय पर करें। बीज की अंकुरण गारंटी कंपनी के नियमों अनुसार है। 🌱',
   authProvider: 'email',
   createdAt: '2026-09-01T10:00:00Z',
 };
@@ -139,6 +146,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true };
   };
 
+  const updateProfile = async (updatedData: Partial<User>): Promise<{ success: boolean; message?: string }> => {
+    await new Promise(r => setTimeout(r, 300));
+
+    if (!user) {
+      return { success: false, message: 'No user is currently logged in.' };
+    }
+
+    const updatedUser: User = {
+      ...user,
+      ...updatedData,
+    };
+
+    setUser(updatedUser);
+
+    // Also update registered users record
+    setRegisteredUsers(prev =>
+      prev.map(u => (u.id === user.id ? { ...u, ...updatedData } : u))
+    );
+
+    return { success: true };
+  };
+
   const logout = () => {
     setUser(null);
   };
@@ -151,6 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         signup,
         loginWithGoogle,
+        updateProfile,
         logout,
       }}
     >

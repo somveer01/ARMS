@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { Printer, Share2, X, CheckCircle2 } from 'lucide-react';
 import { Sale, Payment } from '../types';
 
@@ -19,8 +20,16 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   onClose,
 }) => {
   const { language, t } = useLanguage();
+  const { user } = useAuth();
 
   if (!sale && !payment) return null;
+
+  const shopTitle = user?.shopName || (language === 'hi' ? 'किसान सेवा एवं कृषि केंद्र' : 'KISAN AGRI INPUTS & SEVA KENDRA');
+  const shopPhone = user?.phone || '9812001122';
+  const shopAddress = user?.address ? `${user.address}${user.district ? ', ' + user.district : ''}` : 'Main Market, Near Grain Mandi';
+  const shopLic = user?.licenseNo ? ` • Lic: ${user.licenseNo}` : '';
+  const shopGst = user?.gstin ? ` • GSTIN: ${user.gstin}` : '';
+  const receiptFooter = user?.receiptFooter || (language === 'hi' ? 'खाद, बीज व कीटनाशक खरीदने के लिए धन्यवाद।' : 'Thank you for your purchase.');
 
   const handlePrint = () => {
     window.print();
@@ -32,7 +41,8 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
     if (sale) {
       if (language === 'hi') {
-        text = `*किसान कृषि केंद्र - बिल रसीद*\n` +
+        text = `*${shopTitle} - बिल रसीद*\n` +
+          (user?.phone ? `फोन: ${user.phone}\n` : '') +
           `बिल नं: ${sale.invoiceNo}\n` +
           `दिनांक: ${sale.saleDate}\n` +
           `किसान का नाम: ${sale.farmerName}\n` +
@@ -44,9 +54,11 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           `प्राप्त जमा राशि: ₹${sale.paidAmount} (${sale.paymentMode.toUpperCase()})\n` +
           `*आज की शेष उधारी: ₹${sale.remainingDue}*\n` +
           `*कुल बकाया राशि: ₹${farmerNewDue || sale.remainingDue}*\n` +
-          `धन्यवाद! जय जवान, जय किसान! 🌱`;
+          `${receiptFooter}\n` +
+          `जय जवान, जय किसान! 🌱`;
       } else {
-        text = `*Kisan Agri Retail - Bill Receipt*\n` +
+        text = `*${shopTitle} - Bill Receipt*\n` +
+          (user?.phone ? `Phone: ${user.phone}\n` : '') +
           `Invoice No: ${sale.invoiceNo}\n` +
           `Date: ${sale.saleDate}\n` +
           `Farmer: ${sale.farmerName}\n` +
@@ -58,26 +70,29 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           `Amount Paid: ₹${sale.paidAmount} (${sale.paymentMode.toUpperCase()})\n` +
           `*Due Remaining: ₹${sale.remainingDue}*\n` +
           `*Net Outstanding Due: ₹${farmerNewDue || sale.remainingDue}*\n` +
+          `${receiptFooter}\n` +
           `Thank you for your visit! 🌱`;
       }
     } else if (payment) {
       if (language === 'hi') {
-        text = `*किसान कृषि केंद्र - उधारी जमा रसीद*\n` +
+        text = `*${shopTitle} - उधारी जमा रसीद*\n` +
           `रसीद नं: ${payment.receiptNo}\n` +
           `दिनांक: ${payment.paymentDate}\n` +
           `किसान का नाम: ${payment.farmerName}\n` +
           `प्राप्त राशि: ₹${payment.amount}\n` +
           `माध्यम: ${payment.paymentMode.toUpperCase()}\n` +
           `*जमा के बाद शेष बकाया: ₹${farmerNewDue}*\n` +
-          `धन्यवाद! जय जवान, जय किसान! 🌱`;
+          `${receiptFooter}\n` +
+          `जय जवान, जय किसान! 🌱`;
       } else {
-        text = `*Kisan Agri Retail - Payment Due Receipt*\n` +
+        text = `*${shopTitle} - Payment Due Receipt*\n` +
           `Receipt No: ${payment.receiptNo}\n` +
           `Date: ${payment.paymentDate}\n` +
           `Farmer: ${payment.farmerName}\n` +
           `Amount Received: ₹${payment.amount}\n` +
           `Payment Mode: ${payment.paymentMode.toUpperCase()}\n` +
           `*Balance Due Remaining: ₹${farmerNewDue}*\n` +
+          `${receiptFooter}\n` +
           `Thank you! 🌱`;
       }
     }
@@ -127,13 +142,13 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           {/* Shop Header */}
           <div className="text-center pb-3 border-b-2 border-dashed border-slate-300">
             <h2 className="text-lg font-extrabold uppercase tracking-wide text-slate-900">
-              {language === 'hi' ? 'किसान सेवा एवं कृषि केंद्र' : 'KISAN AGRI INPUTS & SEVA KENDRA'}
+              {shopTitle}
             </h2>
             <p className="text-xs text-slate-600 mt-0.5">
               {language === 'hi' ? 'उच्च गुणवत्ता बीज, खाद एवं कीटनाशक विक्रेता' : 'Certified Seeds, Fertilizers & Crop Protection'}
             </p>
             <p className="text-[11px] text-slate-500">
-              Main Market, Near Grain Mandi • Mobile: 98120-XXXXX
+              {shopAddress} • Mobile: {shopPhone}{shopLic}{shopGst}
             </p>
             <div className="mt-2 inline-block px-3 py-0.5 bg-slate-100 border border-slate-300 rounded font-bold text-[11px]">
               {sale ? (language === 'hi' ? 'बिक्री बीजक / RETAIL INVOICE' : 'RETAIL INVOICE') : (language === 'hi' ? 'जमा रसीद / PAYMENT RECEIPT' : 'RECEIPT')}
@@ -238,7 +253,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
           {/* Footer note */}
           <div className="text-center pt-4 text-[11px] text-slate-500 space-y-1">
-            <p>{language === 'hi' ? 'खाद, बीज व कीटनाशक खरीदने के लिए धन्यवाद।' : 'Thank you for your purchase.'}</p>
+            <p>{receiptFooter}</p>
             <p className="font-semibold text-slate-700">🌱 {language === 'hi' ? 'जय जवान जय किसान' : 'Jai Jawan, Jai Kisan'} 🌱</p>
           </div>
         </div>

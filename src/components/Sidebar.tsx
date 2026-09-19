@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { ProfileModal } from './ProfileModal';
 import {
   LayoutDashboard,
   Settings,
@@ -10,6 +12,7 @@ import {
   CreditCard,
   BarChart3,
   ChevronRight,
+  UserCog,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -26,6 +29,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setIsOpen,
 }) => {
   const { language, t } = useLanguage();
+  const { user } = useAuth();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const menuItems = [
     {
@@ -156,13 +161,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Footer info in sidebar */}
-        <div className="p-3 border-t border-slate-100 bg-slate-50/80">
+        <div className="p-3 border-t border-slate-100 bg-slate-50/80 space-y-2">
+          {user && (
+            <button
+              onClick={() => {
+                setProfileOpen(true);
+                if (window.innerWidth < 768) setIsOpen(false);
+              }}
+              className="w-full flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 transition-all text-left shadow-sm group"
+              title={language === 'hi' ? 'दुकानदार प्रोफ़ाइल एवं सेटिंग्स' : 'Store Owner Profile'}
+            >
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-emerald-800 text-lime-300 font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-bold text-xs text-slate-900 truncate">{user.name}</p>
+                  <p className="text-[10px] text-slate-500 truncate">{user.shopName || user.email}</p>
+                </div>
+              </div>
+              <UserCog className="w-4 h-4 text-slate-400 group-hover:text-emerald-700 shrink-0" />
+            </button>
+          )}
+
           <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 text-xs text-slate-500">
             <p className="font-semibold text-slate-700">ARMS v1.0 Universal</p>
             <p className="text-[11px] text-slate-400">Web • Android • iOS Ready</p>
           </div>
         </div>
       </aside>
+
+      {/* Profile Settings Modal */}
+      <ProfileModal
+        isOpen={profileOpen}
+        onClose={() => setProfileOpen(false)}
+      />
     </>
   );
 };

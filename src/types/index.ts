@@ -7,6 +7,12 @@ export interface User {
   shopName: string;
   phone?: string;
   photoUrl?: string;
+  address?: string;
+  district?: string;
+  state?: string;
+  licenseNo?: string;
+  gstin?: string;
+  receiptFooter?: string;
   authProvider: 'email' | 'google';
   createdAt: string;
 }

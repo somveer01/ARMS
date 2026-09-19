@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { usePWA } from '../context/PWAContext';
+import { ProfileModal } from './ProfileModal';
 import {
   Sprout,
   Languages,
@@ -13,6 +14,7 @@ import {
   LogOut,
   User as UserIcon,
   Smartphone,
+  UserCog,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -29,6 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { products, resetToDefaults } = useData();
   const { user, logout } = useAuth();
   const { isInstalled, installApp } = usePWA();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   // Count low stock products
   const lowStockCount = products.filter(p => p.currentStock <= p.minStockAlert).length;
@@ -109,16 +112,23 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* User Profile Badge & Logout */}
             {user && (
-              <div className="flex items-center space-x-2 pl-1 sm:pl-2 border-l border-emerald-700">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-full bg-lime-400 text-emerald-950 font-black text-xs flex items-center justify-center shadow-sm">
+              <div className="flex items-center space-x-1.5 sm:space-x-2 pl-1 sm:pl-2 border-l border-emerald-700">
+                <button
+                  onClick={() => setProfileOpen(true)}
+                  className="flex items-center space-x-2 p-1 sm:px-2 sm:py-1 rounded-xl hover:bg-emerald-800 active:scale-95 transition-all text-left group"
+                  title={language === 'hi' ? 'दुकानदार प्रोफ़ाइल एवं सेटिंग्स' : 'Store Owner Profile & Settings'}
+                >
+                  <div className="w-8 h-8 rounded-full bg-lime-400 text-emerald-950 font-black text-xs flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform shrink-0">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="hidden lg:block text-left text-xs leading-tight">
-                    <p className="font-bold text-white truncate max-w-[120px]">{user.name}</p>
-                    <p className="text-[10px] text-emerald-300 truncate max-w-[120px]">{user.email}</p>
+                    <div className="flex items-center space-x-1">
+                      <p className="font-bold text-white truncate max-w-[110px]">{user.name}</p>
+                      <UserCog className="w-3 h-3 text-lime-300 opacity-80 group-hover:opacity-100" />
+                    </div>
+                    <p className="text-[10px] text-emerald-300 truncate max-w-[110px]">{user.shopName || user.email}</p>
                   </div>
-                </div>
+                </button>
 
                 <button
                   onClick={() => {
@@ -137,6 +147,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Profile Settings Modal */}
+      <ProfileModal
+        isOpen={profileOpen}
+        onClose={() => setProfileOpen(false)}
+      />
     </header>
   );
 };
