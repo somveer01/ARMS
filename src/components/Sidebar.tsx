@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+﻿import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { ProfileModal } from './ProfileModal';
 import {
   LayoutDashboard,
   Settings,
@@ -30,7 +29,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { language, t } = useLanguage();
   const { user } = useAuth();
-  const [profileOpen, setProfileOpen] = useState(false);
 
   const menuItems = [
     {
@@ -160,19 +158,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </div>
 
-        {/* Footer info in sidebar with dedicated Profile button */}
+        {/* Footer info in sidebar with dedicated Profile screen opener */}
         <div className="p-3 border-t border-slate-100 bg-slate-50/80 space-y-2">
           {user && (
             <button
-              onClick={() => {
-                setProfileOpen(true);
-                if (window.innerWidth < 768) setIsOpen(false);
-              }}
-              className="w-full flex items-center justify-between p-2 rounded-xl bg-white border border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50/60 transition-all text-left shadow-sm group active:scale-95"
+              onClick={() => handleSelect('profile')}
+              className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all text-left shadow-sm group active:scale-95 ${
+                activeTab === 'profile'
+                  ? 'bg-emerald-50 text-emerald-950 border-emerald-500 ring-2 ring-emerald-200'
+                  : 'bg-white border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50'
+              }`}
               title={language === 'hi' ? 'मेरी प्रोफ़ाइल एवं दुकान सेटिंग्स' : 'My Profile & Shop Settings'}
             >
               <div className="flex items-center space-x-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-emerald-800 text-lime-300 font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
+                <div className={`w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center shrink-0 shadow-sm ${
+                  activeTab === 'profile'
+                    ? 'bg-emerald-700 text-white'
+                    : 'bg-emerald-800 text-lime-300'
+                }`}>
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
@@ -185,6 +188,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </p>
                 </div>
               </div>
+              <ChevronRight className={`w-4 h-4 text-emerald-600 shrink-0 transition-transform ${activeTab === 'profile' ? 'translate-x-0.5' : ''}`} />
             </button>
           )}
 
@@ -194,12 +198,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       </aside>
-
-      {/* Profile Settings Modal */}
-      <ProfileModal
-        isOpen={profileOpen}
-        onClose={() => setProfileOpen(false)}
-      />
     </>
   );
 };
