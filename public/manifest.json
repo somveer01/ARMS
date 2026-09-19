@@ -1,0 +1,18 @@
+{
+  "short_name": "ARMS Agri",
+  "name": "ARMS - Agricultural Retailer Management System",
+  "description": "Seeds, Pesticides, Fertilizers & Farmer Khata Ledger (कृषि खुदरा प्रबंधन)",
+  "icons": [
+    {
+      "src": "leaf.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#14532d",
+  "theme_color": "#166534",
+  "display": "standalone",
+  "orientation": "portrait-primary"
+}
