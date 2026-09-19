@@ -1,4 +1,4 @@
-﻿// ARMS - Agricultural Retailer Management System Service Worker v2
+// ARMS - Agricultural Retailer Management System Service Worker v2
 const CACHE_NAME = 'arms-agri-v2';
 const ASSETS_TO_CACHE = [
   './',
