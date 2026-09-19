@@ -99,6 +99,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: BarChart3,
       color: 'text-teal-600',
     },
+    {
+      id: 'profile',
+      num: '8',
+      labelEn: 'Profile & Store Settings',
+      labelHi: '८. प्रोफ़ाइल व दुकान सेटिंग्स',
+      icon: UserCog,
+      color: 'text-purple-600',
+      highlight: true,
+    },
   ];
 
   const handleSelect = (id: string) => {

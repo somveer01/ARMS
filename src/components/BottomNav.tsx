@@ -6,6 +6,7 @@ import {
   CreditCard,
   Package,
   BarChart3,
+  User,
 } from 'lucide-react';
 
 interface BottomNavProps {
@@ -47,6 +48,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab })
       labelEn: 'Reports',
       labelHi: 'रिपोर्ट',
       icon: BarChart3,
+    },
+    {
+      id: 'profile',
+      labelEn: 'Profile',
+      labelHi: 'प्रोफ़ाइल',
+      icon: User,
     },
   ];
 

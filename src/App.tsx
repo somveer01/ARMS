@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { LanguageProvider } from './context/LanguageContext';
 import { DataProvider } from './context/DataContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -17,6 +17,7 @@ import { FarmerRegistration } from './pages/FarmerRegistration';
 import { SalesEntry } from './pages/SalesEntry';
 import { PaymentEntry } from './pages/PaymentEntry';
 import { Reports } from './pages/Reports';
+import { Profile } from './pages/Profile';
 import { Farmer } from './types';
 
 export const AppContent: React.FC = () => {
@@ -92,6 +93,7 @@ export const AppContent: React.FC = () => {
               />
             )}
             {activeTab === 'reports' && <Reports />}
+            {activeTab === 'profile' && <Profile />}
           </div>
         </main>
       </div>
