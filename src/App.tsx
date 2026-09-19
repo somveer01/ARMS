@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { LanguageProvider } from './context/LanguageContext';
 import { DataProvider } from './context/DataContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { Auth } from './pages/Auth';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { BottomNav } from './components/BottomNav';
@@ -15,9 +17,14 @@ import { Reports } from './pages/Reports';
 import { Farmer } from './types';
 
 export const AppContent: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [selectedFarmerForAction, setSelectedFarmerForAction] = useState<Farmer | null>(null);
+
+  if (!isAuthenticated) {
+    return <Auth />;
+  }
 
   const handleSelectFarmerForSale = (farmer: Farmer) => {
     setSelectedFarmerForAction(farmer);
@@ -86,9 +93,11 @@ export const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <LanguageProvider>
-      <DataProvider>
-        <AppContent />
-      </DataProvider>
+      <AuthProvider>
+        <DataProvider>
+          <AppContent />
+        </DataProvider>
+      </AuthProvider>
     </LanguageProvider>
   );
 };

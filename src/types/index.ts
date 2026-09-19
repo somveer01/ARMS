@@ -1,5 +1,16 @@
 export type Language = 'en' | 'hi';
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  shopName: string;
+  phone?: string;
+  photoUrl?: string;
+  authProvider: 'email' | 'google';
+  createdAt: string;
+}
+
 export interface Category {
   id: string;
   name: string;
