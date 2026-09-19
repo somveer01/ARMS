@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { LanguageProvider } from './context/LanguageContext';
 import { DataProvider } from './context/DataContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { PWAProvider } from './context/PWAContext';
 import { Auth } from './pages/Auth';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { BottomNav } from './components/BottomNav';
+import { InstallModal } from './components/InstallModal';
+import { InstallBanner } from './components/InstallBanner';
 import { Dashboard } from './pages/Dashboard';
 import { MasterSetup } from './pages/MasterSetup';
 import { PurchaseEntry } from './pages/PurchaseEntry';
@@ -23,7 +26,13 @@ export const AppContent: React.FC = () => {
   const [selectedFarmerForAction, setSelectedFarmerForAction] = useState<Farmer | null>(null);
 
   if (!isAuthenticated) {
-    return <Auth />;
+    return (
+      <div className="relative min-h-screen flex flex-col">
+        <InstallBanner />
+        <Auth />
+        <InstallModal />
+      </div>
+    );
   }
 
   const handleSelectFarmerForSale = (farmer: Farmer) => {
@@ -38,7 +47,10 @@ export const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 font-sans">
-      {/* Top Navbar with Language Toggle */}
+      {/* PWA Install Banner */}
+      <InstallBanner />
+
+      {/* Top Navbar with Language Toggle and Install App button */}
       <Navbar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
@@ -86,6 +98,9 @@ export const AppContent: React.FC = () => {
 
       {/* Mobile Touch Bottom Nav for Android & iOS */}
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      {/* PWA Install Instructions Modal */}
+      <InstallModal />
     </div>
   );
 };
@@ -95,7 +110,9 @@ export const App: React.FC = () => {
     <LanguageProvider>
       <AuthProvider>
         <DataProvider>
-          <AppContent />
+          <PWAProvider>
+            <AppContent />
+          </PWAProvider>
         </DataProvider>
       </AuthProvider>
     </LanguageProvider>

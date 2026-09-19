@@ -2,6 +2,7 @@ import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
+import { usePWA } from '../context/PWAContext';
 import {
   Sprout,
   Languages,
@@ -11,6 +12,7 @@ import {
   RotateCcw,
   LogOut,
   User as UserIcon,
+  Smartphone,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -26,6 +28,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { language, toggleLanguage, t } = useLanguage();
   const { products, resetToDefaults } = useData();
   const { user, logout } = useAuth();
+  const { isInstalled, installApp } = usePWA();
 
   // Count low stock products
   const lowStockCount = products.filter(p => p.currentStock <= p.minStockAlert).length;
@@ -64,8 +67,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Right: Low Stock Alert Badge + Language Switcher + User Profile + Logout */}
+          {/* Right: Install App + Low Stock Alert Badge + Language Switcher + User Profile + Logout */}
           <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Install App Button (Visible if not running as installed PWA) */}
+            {!isInstalled && (
+              <button
+                onClick={installApp}
+                className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-lime-400 hover:bg-lime-300 active:scale-95 text-emerald-950 rounded-lg text-xs font-black shadow transition-all animate-pulse"
+                title={language === 'hi' ? 'अपने फोन में ऐप इंस्टॉल करें' : 'Install App on Phone'}
+              >
+                <Smartphone className="w-3.5 h-3.5 text-emerald-900" />
+                <span className="hidden sm:inline">{language === 'hi' ? 'ऐप इंस्टॉल करें' : 'Install App'}</span>
+                <span className="sm:hidden font-extrabold">{language === 'hi' ? 'ऐप लें' : 'Install'}</span>
+              </button>
+            )}
             {/* Low stock badge */}
             {lowStockCount > 0 && (
               <div

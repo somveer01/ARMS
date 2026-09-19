@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { usePWA } from '../context/PWAContext';
 import {
   Sprout,
   Mail,
@@ -14,11 +15,13 @@ import {
   Languages,
   ArrowRight,
   ShieldCheck,
+  Smartphone,
 } from 'lucide-react';
 
 export const Auth: React.FC = () => {
   const { login, signup, loginWithGoogle } = useAuth();
   const { language, toggleLanguage } = useLanguage();
+  const { isInstalled, installApp } = usePWA();
 
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -89,8 +92,18 @@ export const Auth: React.FC = () => {
       <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-200/50 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-lime-200/50 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Top Bar with Language Switcher */}
-      <div className="absolute top-4 right-4 z-20">
+      {/* Top Bar with Install App & Language Switcher */}
+      <div className="absolute top-4 right-4 z-20 flex items-center space-x-2">
+        {!isInstalled && (
+          <button
+            onClick={installApp}
+            className="flex items-center space-x-1.5 px-3 py-1.5 bg-lime-400 hover:bg-lime-300 active:scale-95 text-emerald-950 font-bold rounded-xl shadow-sm text-xs transition-all animate-pulse"
+            title="Install App / ऐप इंस्टॉल करें"
+          >
+            <Smartphone className="w-4 h-4 text-emerald-900" />
+            <span>{language === 'hi' ? 'ऐप इंस्टॉल करें' : 'Install App'}</span>
+          </button>
+        )}
         <button
           onClick={toggleLanguage}
           className="flex items-center space-x-2 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl shadow-sm text-xs font-bold text-slate-700 transition-all"
