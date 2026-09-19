@@ -14,7 +14,6 @@ import {
   MapPin,
   Clock,
   CheckCircle,
-  UserCog,
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -75,14 +74,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
               : 'Seeds, fertilizers, pesticides sales & village-wise farmer credit ledgers'}
           </p>
         </div>
-        <div className="flex items-center space-x-2 flex-wrap gap-2">
-          <button
-            onClick={() => setActiveTab('profile')}
-            className="flex items-center space-x-2 bg-emerald-700/90 hover:bg-emerald-600 text-white font-bold px-3.5 py-2.5 rounded-xl shadow transition-all active:scale-95 text-xs sm:text-sm border border-emerald-500/50"
-          >
-            <UserCog className="w-4 h-4 text-lime-300" />
-            <span>{language === 'hi' ? 'प्रोफ़ाइल व दुकान सेटिंग' : 'Profile & Shop'}</span>
-          </button>
+        <div className="flex items-center space-x-2">
           <button
             onClick={() => setActiveTab('sales-entry')}
             className="flex items-center space-x-2 bg-lime-400 hover:bg-lime-300 text-emerald-950 font-bold px-4 py-2.5 rounded-xl shadow transition-all active:scale-95 text-xs sm:text-sm"
