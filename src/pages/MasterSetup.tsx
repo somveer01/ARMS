@@ -14,6 +14,7 @@ import {
   Filter,
   X,
   Tag,
+  Building,
 } from 'lucide-react';
 import { Product, Supplier } from '../types';
 
@@ -35,9 +36,17 @@ export const MasterSetup: React.FC = () => {
   } = useData();
 
   const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'units' | 'suppliers' | 'villages'>('products');
+  const [villageView, setVillageView] = useState<'villages' | 'districts'>('villages');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProductCategory, setSelectedProductCategory] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDistrictModal, setShowDistrictModal] = useState(false);
+
+  // New District Form State
+  const [newDist, setNewDist] = useState({
+    name: '',
+    nameHi: '',
+  });
 
   // New Product Form State
   const [newProd, setNewProd] = useState({
@@ -138,6 +147,15 @@ export const MasterSetup: React.FC = () => {
     setShowAddModal(false);
   };
 
+  const handleCreateDistrict = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDist.name) return;
+    const created = addDistrict(newDist);
+    setNewDist({ name: '', nameHi: '' });
+    setNewVil(prev => ({ ...prev, districtId: created.id }));
+    setShowDistrictModal(false);
+  };
+
   const handleCreateCategory = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCat.name) return;
@@ -179,24 +197,42 @@ export const MasterSetup: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            if (activeTab === 'products' && selectedProductCategory !== 'all') {
-              setNewProd(prev => ({ ...prev, categoryId: selectedProductCategory }));
-            }
-            setShowAddModal(true);
-          }}
-          className="flex items-center justify-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow transition-all active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          <span>
-            {activeTab === 'products' && (language === 'hi' ? 'नया उत्पाद जोड़ें' : 'Add New Product')}
-            {activeTab === 'categories' && (language === 'hi' ? 'नई श्रेणी जोड़ें' : 'Add Category')}
-            {activeTab === 'units' && (language === 'hi' ? 'नई इकाई जोड़ें' : 'Add Unit')}
-            {activeTab === 'suppliers' && (language === 'hi' ? 'नया सप्लायर जोड़ें' : 'Add Supplier')}
-            {activeTab === 'villages' && (language === 'hi' ? 'नया गाँव जोड़ें' : 'Add Village')}
-          </span>
-        </button>
+        {activeTab === 'villages' ? (
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowDistrictModal(true)}
+              className="flex items-center justify-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow transition-all active:scale-95"
+            >
+              <Building className="w-4 h-4" />
+              <span>{language === 'hi' ? 'नया ज़िला जोड़ें' : 'Add District'}</span>
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center justify-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow transition-all active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{language === 'hi' ? 'नया गाँव जोड़ें' : 'Add Village'}</span>
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => {
+              if (activeTab === 'products' && selectedProductCategory !== 'all') {
+                setNewProd(prev => ({ ...prev, categoryId: selectedProductCategory }));
+              }
+              setShowAddModal(true);
+            }}
+            className="flex items-center justify-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow transition-all active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>
+              {activeTab === 'products' && (language === 'hi' ? 'नया उत्पाद जोड़ें' : 'Add New Product')}
+              {activeTab === 'categories' && (language === 'hi' ? 'नई श्रेणी जोड़ें' : 'Add Category')}
+              {activeTab === 'units' && (language === 'hi' ? 'नई इकाई जोड़ें' : 'Add Unit')}
+              {activeTab === 'suppliers' && (language === 'hi' ? 'नया सप्लायर जोड़ें' : 'Add Supplier')}
+            </span>
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -536,27 +572,100 @@ export const MasterSetup: React.FC = () => {
       {/* Tab 5: Villages & Districts */}
       {activeTab === 'villages' && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {villages.map(v => {
-              const dist = districts.find(d => d.id === v.districtId);
-              return (
-                <div key={v.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2.5 bg-cyan-50 text-cyan-700 rounded-xl">
-                      <MapPin className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{v.name}</h4>
-                      <p className="text-xs text-emerald-700 font-semibold">{v.nameHi}</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        {language === 'hi' ? 'ज़िला:' : 'District:'} {language === 'hi' ? dist?.nameHi || dist?.name : dist?.name}
-                      </p>
+          {/* Sub-toggle Bar: Villages vs Districts */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={() => setVillageView('villages')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center space-x-1.5 transition-colors ${
+                  villageView === 'villages'
+                    ? 'bg-cyan-700 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                <span>{language === 'hi' ? 'गाँव की सूची' : 'Villages'} ({villages.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setVillageView('districts')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center space-x-1.5 transition-colors ${
+                  villageView === 'districts'
+                    ? 'bg-blue-700 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <Building className="w-3.5 h-3.5" />
+                <span>{language === 'hi' ? 'ज़िलों की सूची' : 'Districts'} ({districts.length})</span>
+              </button>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setShowDistrictModal(true)}
+                className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-xl text-xs font-bold flex items-center space-x-1 transition-all active:scale-95"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{language === 'hi' ? 'नया ज़िला जोड़ें' : 'Add District'}</span>
+              </button>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-xs font-bold flex items-center space-x-1 transition-all active:scale-95"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{language === 'hi' ? 'नया गाँव जोड़ें' : 'Add Village'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* View Mode: Districts List */}
+          {villageView === 'districts' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {districts.map(d => {
+                const linkedVillages = villages.filter(v => v.districtId === d.id);
+                return (
+                  <div key={d.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-3 bg-blue-50 text-blue-700 rounded-xl">
+                        <Building className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-base">{d.name}</h4>
+                        <p className="text-xs text-blue-700 font-semibold">{d.nameHi}</p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {linkedVillages.length} {language === 'hi' ? 'गाँव पंजीकृत' : 'villages linked'}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* View Mode: Villages List */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {villages.map(v => {
+                const dist = districts.find(d => d.id === v.districtId);
+                return (
+                  <div key={v.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2.5 bg-cyan-50 text-cyan-700 rounded-xl">
+                        <MapPin className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-sm">{v.name}</h4>
+                        <p className="text-xs text-emerald-700 font-semibold">{v.nameHi}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {language === 'hi' ? 'ज़िला:' : 'District:'} {language === 'hi' ? dist?.nameHi || dist?.name : dist?.name}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -769,7 +878,17 @@ export const MasterSetup: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-medium mb-1">{t.districtName}</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-700 font-medium">{t.districtName} *</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowDistrictModal(true)}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>{language === 'hi' ? '+ नया ज़िला जोड़ें' : '+ Add District'}</span>
+                    </button>
+                  </div>
                   <select
                     value={newVil.districtId}
                     onChange={e => setNewVil({ ...newVil, districtId: e.target.value })}
@@ -882,6 +1001,71 @@ export const MasterSetup: React.FC = () => {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Create District Modal */}
+      {showDistrictModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-900 text-lg flex items-center space-x-2">
+                <Building className="w-5 h-5 text-blue-600" />
+                <span>{language === 'hi' ? 'नया ज़िला जोड़ें' : 'Create New District'}</span>
+              </h3>
+              <button
+                onClick={() => setShowDistrictModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateDistrict} className="space-y-3 text-xs sm:text-sm">
+              <div>
+                <label className="block text-slate-700 font-medium mb-1">
+                  {language === 'hi' ? 'ज़िले का नाम (English) *' : 'District Name (English) *'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newDist.name}
+                  onChange={e => setNewDist({ ...newDist, name: e.target.value })}
+                  className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="e.g. Aligarh, Agra, Mathura"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-medium mb-1">
+                  {language === 'hi' ? 'ज़िले का नाम (हिन्दी)' : 'District Name (Hindi)'}
+                </label>
+                <input
+                  type="text"
+                  value={newDist.nameHi}
+                  onChange={e => setNewDist({ ...newDist, nameHi: e.target.value })}
+                  className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="उदा. अलीगढ़, आगरा, मथुरा"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDistrictModal(false)}
+                  className="px-4 py-2 border border-slate-300 rounded-xl font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow"
+                >
+                  {t.save}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
