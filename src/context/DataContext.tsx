@@ -47,437 +47,29 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-// Initial Seed Data
-const initialCategories: Category[] = [
-  { id: 'cat-1', name: 'Fertilizers', nameHi: 'खाद / उर्वरक', color: 'emerald' },
-  { id: 'cat-2', name: 'Seeds', nameHi: 'बीज', color: 'amber' },
-  { id: 'cat-3', name: 'Pesticides', nameHi: 'कीटनाशक दवाइयां', color: 'rose' },
-  { id: 'cat-4', name: 'Micro-nutrients & Tonics', nameHi: 'टॉनिक / सूक्ष्म पोषक तत्व', color: 'blue' },
-  { id: 'cat-5', name: 'Sprayers & Equipment', nameHi: 'छिड़काव यंत्र व उपकरण', color: 'purple' },
-];
-
-const initialUnits: Unit[] = [
-  { id: 'unit-1', name: 'Bag (बोरी/बैग)', nameHi: 'बैग (Bag)', shortCode: 'Bag' },
-  { id: 'unit-2', name: 'Packet (पैकेट)', nameHi: 'पैकेट (Pkt)', shortCode: 'Pkt' },
-  { id: 'unit-3', name: 'Bottle (बोतल)', nameHi: 'बोतल (Btl)', shortCode: 'Btl' },
-  { id: 'unit-4', name: 'Kilogram (किलो)', nameHi: 'किलोग्राम (Kg)', shortCode: 'Kg' },
-  { id: 'unit-5', name: 'Liter (लीटर)', nameHi: 'लीटर (Ltr)', shortCode: 'Ltr' },
-  { id: 'unit-6', name: 'Piece (नग)', nameHi: 'नग (Pcs)', shortCode: 'Pcs' },
-];
-
-const initialDistricts: District[] = [
-  { id: 'dist-1', name: 'Karnal', nameHi: 'करनाल' },
-  { id: 'dist-2', name: 'Meerut', nameHi: 'मेरठ' },
-  { id: 'dist-3', name: 'Kurukshetra', nameHi: 'कुरुक्षेत्र' },
-];
-
-const initialVillages: Village[] = [
-  { id: 'vil-1', name: 'Rampur', nameHi: 'रामपुर', districtId: 'dist-1' },
-  { id: 'vil-2', name: 'Kunjpura', nameHi: 'कुंजपुरा', districtId: 'dist-1' },
-  { id: 'vil-3', name: 'Nilokheri', nameHi: 'नीलोखेड़ी', districtId: 'dist-1' },
-  { id: 'vil-4', name: 'Taraori', nameHi: 'तरावड़ी', districtId: 'dist-1' },
-  { id: 'vil-5', name: 'Daurala', nameHi: 'दौराला', districtId: 'dist-2' },
-  { id: 'vil-6', name: 'Sardhana', nameHi: 'सरधना', districtId: 'dist-2' },
-  { id: 'vil-7', name: 'Mawana', nameHi: 'मवाना', districtId: 'dist-2' },
-  { id: 'vil-8', name: 'Pehowa', nameHi: 'पिहोवा', districtId: 'dist-3' },
-];
-
-const initialSuppliers: Supplier[] = [
-  {
-    id: 'sup-1',
-    name: 'IFFCO Fertilizer Depo',
-    company: 'Indian Farmers Fertiliser Coop',
-    phone: '9812001122',
-    gstin: '06AAACI1234F1Z8',
-    address: 'Grain Market, Karnal',
-    openingBalance: 0,
-    currentPayable: 25000,
-    createdAt: '2026-09-01T10:00:00Z',
-  },
-  {
-    id: 'sup-2',
-    name: 'Bayer CropScience Hub',
-    company: 'Bayer India Ltd',
-    phone: '9822334455',
-    gstin: '07AABCB5566G1Z2',
-    address: 'GT Road, Panipat',
-    openingBalance: 0,
-    currentPayable: 15000,
-    createdAt: '2026-09-01T10:00:00Z',
-  },
-  {
-    id: 'sup-3',
-    name: 'National Seeds Agency',
-    company: 'National Seeds Corp',
-    phone: '9899112233',
-    gstin: '06AAACN9988H1Z4',
-    address: 'Railway Station Road, Karnal',
-    openingBalance: 0,
-    currentPayable: 8000,
-    createdAt: '2026-09-01T10:00:00Z',
-  },
-];
-
-const initialProducts: Product[] = [
-  {
-    id: 'prod-1',
-    name: 'Neem Coated Urea (45 Kg)',
-    nameHi: 'नीम लेपित यूरिया (45 किग्रा)',
-    categoryId: 'cat-1',
-    unitId: 'unit-1',
-    hsnCode: '31021000',
-    batchNo: 'UR-2026-B1',
-    purchasePrice: 242,
-    sellingPrice: 266,
-    currentStock: 120,
-    minStockAlert: 25,
-    createdAt: '2026-09-01T10:00:00Z',
-  },
-  {
-    id: 'prod-2',
-    name: 'DAP Fertilizer (50 Kg)',
-    nameHi: 'डीएपी खाद (50 किग्रा)',
-    categoryId: 'cat-1',
-    unitId: 'unit-1',
-    hsnCode: '31053000',
-    batchNo: 'DAP-908',
-    purchasePrice: 1280,
-    sellingPrice: 1350,
-    currentStock: 65,
-    minStockAlert: 15,
-    createdAt: '2026-09-01T10:00:00Z',
-  },
-  {
-    id: 'prod-3',
-    name: 'NPK 12:32:16 (50 Kg)',
-    nameHi: 'एनपीके 12:32:16 (50 किग्रा)',
-    categoryId: 'cat-1',
-    unitId: 'unit-1',
-    hsnCode: '31052000',
-    batchNo: 'NPK-441',
-    purchasePrice: 1400,
-    sellingPrice: 1470,
-    currentStock: 18,
-    minStockAlert: 20, // triggers low stock alert!
-    createdAt: '2026-09-01T10:00:00Z',
-  },
-  {
-    id: 'prod-4',
-    name: 'Chlorpyrifos 20% EC (1 Liter)',
-    nameHi: 'क्लोरोपायरीफॉस 20% ईसी (1 लीटर)',
-    categoryId: 'cat-3',
-    unitId: 'unit-3',
-    hsnCode: '38089190',
-    batchNo: 'CHP-778',
-    expiryDate: '2027-08-30',
-    purchasePrice: 380,
-    sellingPrice: 450,
-    currentStock: 45,
-    minStockAlert: 10,
-    createdAt: '2026-09-01T10:00:00Z',
-  },
-  {
-    id: 'prod-5',
-    name: 'Coragen Insecticide (60 ml)',
-    nameHi: 'कोराजन कीटनाशक (60 मिली)',
-    categoryId: 'cat-3',
-    unitId: 'unit-3',
-    hsnCode: '38089199',
-    batchNo: 'CRG-102',
-    expiryDate: '2027-11-15',
-    purchasePrice: 1550,
-    sellingPrice: 1750,
-    currentStock: 8,
-    minStockAlert: 10, // triggers low stock alert!
-    createdAt: '2026-09-01T10:00:00Z',
-  },
-  {
-    id: 'prod-6',
-    name: 'Hybrid Mustard Seed Pioneer 45S46 (1 Kg)',
-    nameHi: 'हाइब्रिड सरसों बीज पायनियर 45S46 (1 किग्रा)',
-    categoryId: 'cat-2',
-    unitId: 'unit-2',
-    hsnCode: '12075010',
-    batchNo: 'PIO-MS-09',
-    expiryDate: '2027-03-31',
-    purchasePrice: 720,
-    sellingPrice: 850,
-    currentStock: 80,
-    minStockAlert: 20,
-    createdAt: '2026-09-01T10:00:00Z',
-  },
-  {
-    id: 'prod-7',
-    name: 'Certified Wheat Seed HD-2967 (40 Kg)',
-    nameHi: 'प्रमाणित गेहूं बीज HD-2967 (40 किग्रा)',
-    categoryId: 'cat-2',
-    unitId: 'unit-1',
-    hsnCode: '10019910',
-    batchNo: 'WHT-2967-A',
-    expiryDate: '2026-12-31',
-    purchasePrice: 1100,
-    sellingPrice: 1250,
-    currentStock: 5,
-    minStockAlert: 25, // triggers low stock alert!
-    createdAt: '2026-09-01T10:00:00Z',
-  },
-  {
-    id: 'prod-8',
-    name: 'Zinc Sulphate Monohydrate 33% (5 Kg)',
-    nameHi: 'जिंक सल्फेट 33% (5 किग्रा)',
-    categoryId: 'cat-4',
-    unitId: 'unit-2',
-    hsnCode: '28332990',
-    batchNo: 'ZN-33-88',
-    purchasePrice: 310,
-    sellingPrice: 380,
-    currentStock: 35,
-    minStockAlert: 10,
-    createdAt: '2026-09-01T10:00:00Z',
-  },
-];
-
-const initialFarmers: Farmer[] = [
-  {
-    id: 'farm-1',
-    name: 'Rameshwar Sharma (रामेश्वर शर्मा)',
-    fatherName: 'Late Sh. Kashi Ram',
-    mobile: '9876543210',
-    districtId: 'dist-1',
-    villageId: 'vil-1', // Rampur
-    landAcreage: 12,
-    creditLimit: 50000,
-    openingDue: 3500,
-    currentDue: 5200,
-    createdAt: '2026-09-01T10:00:00Z',
-  },
-  {
-    id: 'farm-2',
-    name: 'Baldev Singh (बलदेव सिंह)',
-    fatherName: 'Sh. Gurmukh Singh',
-    mobile: '9812345678',
-    districtId: 'dist-1',
-    villageId: 'vil-1', // Rampur
-    landAcreage: 28,
-    creditLimit: 100000,
-    openingDue: 0,
-    currentDue: 14200,
-    createdAt: '2026-09-02T10:00:00Z',
-  },
-  {
-    id: 'farm-3',
-    name: 'Jaiveer Yadav (जयवीर यादव)',
-    fatherName: 'Sh. Ramphal Yadav',
-    mobile: '9416253412',
-    districtId: 'dist-1',
-    villageId: 'vil-1', // Rampur
-    landAcreage: 15,
-    creditLimit: 60000,
-    openingDue: 2000,
-    currentDue: 4700,
-    createdAt: '2026-09-02T10:00:00Z',
-  },
-  {
-    id: 'farm-4',
-    name: 'Suresh Chand (सुरेश चंद)',
-    fatherName: 'Sh. Dharam Pal',
-    mobile: '9896541230',
-    districtId: 'dist-1',
-    villageId: 'vil-2', // Kunjpura
-    landAcreage: 8,
-    creditLimit: 40000,
-    openingDue: 0,
-    currentDue: 2800,
-    createdAt: '2026-09-03T10:00:00Z',
-  },
-  {
-    id: 'farm-5',
-    name: 'Dharmender Tyagi (धर्मेन्द्र त्यागी)',
-    fatherName: 'Sh. Satpal Tyagi',
-    mobile: '9756123456',
-    districtId: 'dist-2',
-    villageId: 'vil-5', // Daurala
-    landAcreage: 18,
-    creditLimit: 75000,
-    openingDue: 1500,
-    currentDue: 6300,
-    createdAt: '2026-09-03T10:00:00Z',
-  },
-  {
-    id: 'farm-6',
-    name: 'Kuldeep Nain (कुलदीप नैन)',
-    fatherName: 'Sh. Rajendra Nain',
-    mobile: '9812098765',
-    districtId: 'dist-1',
-    villageId: 'vil-3', // Nilokheri
-    landAcreage: 22,
-    creditLimit: 80000,
-    openingDue: 0,
-    currentDue: 0, // Fully paid
-    createdAt: '2026-09-04T10:00:00Z',
-  },
-];
-
-const initialPurchases: Purchase[] = [
-  {
-    id: 'pur-1',
-    invoiceNo: 'IFFCO-9921',
-    supplierId: 'sup-1',
-    supplierName: 'IFFCO Fertilizer Depo',
-    purchaseDate: '2026-09-05',
-    items: [
-      {
-        productId: 'prod-1',
-        productName: 'Neem Coated Urea (45 Kg)',
-        quantity: 100,
-        unitRate: 242,
-        totalCost: 24200,
-      },
-      {
-        productId: 'prod-2',
-        productName: 'DAP Fertilizer (50 Kg)',
-        quantity: 40,
-        unitRate: 1280,
-        totalCost: 51200,
-      },
-    ],
-    totalAmount: 75400,
-    paidAmount: 50400,
-    balanceDue: 25000,
-    notes: 'Seasonal supply of Urea & DAP',
-    createdAt: '2026-09-05T11:00:00Z',
-  },
-];
-
-const initialSales: Sale[] = [
-  {
-    id: 'sale-1',
-    invoiceNo: 'INV-2026-001',
-    farmerId: 'farm-1',
-    farmerName: 'Rameshwar Sharma (रामेश्वर शर्मा)',
-    farmerMobile: '9876543210',
-    farmerVillage: 'Rampur',
-    saleDate: '2026-09-18',
-    items: [
-      {
-        productId: 'prod-1',
-        productName: 'Neem Coated Urea (45 Kg)',
-        unitName: 'Bag',
-        quantity: 10,
-        unitRate: 266,
-        totalCost: 2660,
-      },
-      {
-        productId: 'prod-4',
-        productName: 'Chlorpyrifos 20% EC (1 Liter)',
-        unitName: 'Btl',
-        quantity: 2,
-        unitRate: 450,
-        totalCost: 900,
-      },
-    ],
-    subTotal: 3560,
-    discount: 60,
-    grandTotal: 3500,
-    paidAmount: 1800,
-    remainingDue: 1700,
-    paymentMode: 'cash',
-    notes: 'Wheat sowing preparation',
-    createdAt: '2026-09-18T14:30:00Z',
-  },
-  {
-    id: 'sale-2',
-    invoiceNo: 'INV-2026-002',
-    farmerId: 'farm-2',
-    farmerName: 'Baldev Singh (बलदेव सिंह)',
-    farmerMobile: '9812345678',
-    farmerVillage: 'Rampur',
-    saleDate: '2026-09-19',
-    items: [
-      {
-        productId: 'prod-2',
-        productName: 'DAP Fertilizer (50 Kg)',
-        unitName: 'Bag',
-        quantity: 15,
-        unitRate: 1350,
-        totalCost: 20250,
-      },
-    ],
-    subTotal: 20250,
-    discount: 250,
-    grandTotal: 20000,
-    paidAmount: 5800,
-    remainingDue: 14200,
-    paymentMode: 'upi',
-    notes: 'Mustard crop fertilizer',
-    createdAt: '2026-09-19T11:15:00Z',
-  },
-];
-
-const initialPayments: Payment[] = [
-  {
-    id: 'pay-1',
-    receiptNo: 'REC-2026-001',
-    farmerId: 'farm-1',
-    farmerName: 'Rameshwar Sharma (रामेश्वर शर्मा)',
-    paymentDate: '2026-09-17',
-    amount: 2000,
-    paymentMode: 'upi',
-    referenceNo: 'UPI-9821039812',
-    notes: 'Partial payment against previous paddy dues',
-    createdAt: '2026-09-17T16:00:00Z',
-  },
-];
-
-const initialStockMovements: StockMovement[] = [
-  {
-    id: 'sm-1',
-    productId: 'prod-1',
-    productName: 'Neem Coated Urea (45 Kg)',
-    date: '2026-09-05',
-    type: 'purchase',
-    quantity: 100,
-    balanceAfter: 130,
-    referenceId: 'pur-1',
-    notes: 'Purchased from IFFCO',
-  },
-  {
-    id: 'sm-2',
-    productId: 'prod-1',
-    productName: 'Neem Coated Urea (45 Kg)',
-    date: '2026-09-18',
-    type: 'sale',
-    quantity: -10,
-    balanceAfter: 120,
-    referenceId: 'sale-1',
-    notes: 'Sold to Rameshwar Sharma',
-  },
-  {
-    id: 'sm-3',
-    productId: 'prod-2',
-    productName: 'DAP Fertilizer (50 Kg)',
-    date: '2026-09-05',
-    type: 'purchase',
-    quantity: 40,
-    balanceAfter: 80,
-    referenceId: 'pur-1',
-    notes: 'Purchased from IFFCO',
-  },
-  {
-    id: 'sm-4',
-    productId: 'prod-2',
-    productName: 'DAP Fertilizer (50 Kg)',
-    date: '2026-09-19',
-    type: 'sale',
-    quantity: -15,
-    balanceAfter: 65,
-    referenceId: 'sale-2',
-    notes: 'Sold to Baldev Singh',
-  },
-];
+import {
+  CURRENT_SEED_VERSION,
+  initialCategories,
+  initialUnits,
+  initialDistricts,
+  initialVillages,
+  initialSuppliers,
+  initialProducts,
+  initialFarmers,
+  initialPurchases,
+  initialSales,
+  initialPayments,
+  initialStockMovements,
+} from '../data/seedData';
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [categories, setCategories] = useState<Category[]>(() => {
+    const savedVersion = localStorage.getItem('arms_seed_version_cat');
+    if (savedVersion !== CURRENT_SEED_VERSION) {
+      localStorage.setItem('arms_seed_version_cat', CURRENT_SEED_VERSION);
+      localStorage.setItem('arms_categories', JSON.stringify(initialCategories));
+      return initialCategories;
+    }
     const saved = localStorage.getItem('arms_categories');
     return saved ? JSON.parse(saved) : initialCategories;
   });
@@ -498,12 +90,36 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [suppliers, setSuppliers] = useState<Supplier[]>(() => {
+    const savedVersion = localStorage.getItem('arms_seed_version_sup');
+    if (savedVersion !== CURRENT_SEED_VERSION) {
+      localStorage.setItem('arms_seed_version_sup', CURRENT_SEED_VERSION);
+      localStorage.setItem('arms_suppliers', JSON.stringify(initialSuppliers));
+      return initialSuppliers;
+    }
     const saved = localStorage.getItem('arms_suppliers');
     return saved ? JSON.parse(saved) : initialSuppliers;
   });
 
   const [products, setProducts] = useState<Product[]>(() => {
+    const savedVersion = localStorage.getItem('arms_seed_version');
     const saved = localStorage.getItem('arms_products');
+
+    if (savedVersion !== CURRENT_SEED_VERSION) {
+      localStorage.setItem('arms_seed_version', CURRENT_SEED_VERSION);
+      if (saved) {
+        try {
+          const existing: Product[] = JSON.parse(saved);
+          const existingIds = new Set(existing.map(p => p.id));
+          const newProducts = initialProducts.filter(p => !existingIds.has(p.id));
+          const merged = [...existing, ...newProducts];
+          localStorage.setItem('arms_products', JSON.stringify(merged));
+          return merged;
+        } catch {
+          return initialProducts;
+        }
+      }
+      return initialProducts;
+    }
     return saved ? JSON.parse(saved) : initialProducts;
   });
 
