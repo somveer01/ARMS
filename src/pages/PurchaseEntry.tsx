@@ -31,7 +31,7 @@ export const PurchaseEntry: React.FC = () => {
       expiryDate: '',
     },
   ]);
-  const [paidAmount, setPaidAmount] = useState<number>(0);
+  const [paidAmount, setPaidAmount] = useState<number | string>('');
   const [notes, setNotes] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -39,14 +39,14 @@ export const PurchaseEntry: React.FC = () => {
   const selectedSupplier = suppliers.find(s => s.id === supplierId);
 
   // Calculate total purchase cost
-  const totalAmount = items.reduce((sum, item) => sum + item.totalCost, 0);
-  const balancePayable = Math.max(0, totalAmount - paidAmount);
+  const totalAmount = items.reduce((sum, item) => sum + (Number(item.totalCost) || 0), 0);
+  const balancePayable = Math.max(0, totalAmount - (Number(paidAmount) || 0));
 
   const handleProductChange = (index: number, prodId: string) => {
     const prod = products.find(p => p.id === prodId);
     const updated = [...items];
     const unitRate = prod?.purchasePrice || 0;
-    const qty = updated[index].quantity;
+    const qty = Number(updated[index].quantity) || 1;
     updated[index] = {
       ...updated[index],
       productId: prodId,
@@ -59,17 +59,19 @@ export const PurchaseEntry: React.FC = () => {
     setItems(updated);
   };
 
-  const handleQtyChange = (index: number, qty: number) => {
+  const handleQtyChange = (index: number, qty: any) => {
     const updated = [...items];
-    updated[index].quantity = qty;
-    updated[index].totalCost = qty * updated[index].unitRate;
+    const numQty = qty === '' ? '' : Number(qty);
+    updated[index].quantity = numQty as any;
+    updated[index].totalCost = (Number(numQty) || 0) * (Number(updated[index].unitRate) || 0);
     setItems(updated);
   };
 
-  const handleRateChange = (index: number, rate: number) => {
+  const handleRateChange = (index: number, rate: any) => {
     const updated = [...items];
-    updated[index].unitRate = rate;
-    updated[index].totalCost = updated[index].quantity * rate;
+    const numRate = rate === '' ? '' : Number(rate);
+    updated[index].unitRate = numRate as any;
+    updated[index].totalCost = (Number(updated[index].quantity) || 0) * (Number(numRate) || 0);
     setItems(updated);
   };
 
@@ -103,9 +105,14 @@ export const PurchaseEntry: React.FC = () => {
       supplierId,
       supplierName: selectedSupplier?.name || 'Supplier',
       purchaseDate,
-      items,
+      items: items.map(it => ({
+        ...it,
+        quantity: Number(it.quantity) || 1,
+        unitRate: Number(it.unitRate) || 0,
+        totalCost: (Number(it.quantity) || 1) * (Number(it.unitRate) || 0),
+      })),
       totalAmount,
-      paidAmount: Number(paidAmount),
+      paidAmount: Number(paidAmount) || 0,
       balanceDue: balancePayable,
       notes,
     });
@@ -126,7 +133,7 @@ export const PurchaseEntry: React.FC = () => {
         expiryDate: '',
       },
     ]);
-    setPaidAmount(0);
+    setPaidAmount('');
     setNotes('');
   };
 
@@ -288,9 +295,12 @@ export const PurchaseEntry: React.FC = () => {
                     <input
                       type="number"
                       min="1"
+                      step="any"
+                      placeholder="1"
                       required
-                      value={item.quantity}
-                      onChange={e => handleQtyChange(idx, Number(e.target.value))}
+                      value={item.quantity === 0 || (item.quantity as any) === '' ? '' : item.quantity}
+                      onFocus={e => e.target.select()}
+                      onChange={e => handleQtyChange(idx, e.target.value === '' ? '' : Number(e.target.value))}
                       className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-center font-bold"
                     />
                   </div>
@@ -301,9 +311,12 @@ export const PurchaseEntry: React.FC = () => {
                     <input
                       type="number"
                       min="0"
+                      step="any"
+                      placeholder="0"
                       required
-                      value={item.unitRate}
-                      onChange={e => handleRateChange(idx, Number(e.target.value))}
+                      value={item.unitRate === 0 || (item.unitRate as any) === '' ? '' : item.unitRate}
+                      onFocus={e => e.target.select()}
+                      onChange={e => handleRateChange(idx, e.target.value === '' ? '' : Number(e.target.value))}
                       className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-right font-medium"
                     />
                   </div>
@@ -347,8 +360,11 @@ export const PurchaseEntry: React.FC = () => {
               <input
                 type="number"
                 min="0"
-                value={paidAmount}
-                onChange={e => setPaidAmount(Number(e.target.value))}
+                step="any"
+                placeholder="0"
+                value={paidAmount === 0 || (paidAmount as any) === '' ? '' : paidAmount}
+                onFocus={e => e.target.select()}
+                onChange={e => setPaidAmount(e.target.value === '' ? ('' as any) : Number(e.target.value))}
                 className="w-full p-2 border border-slate-300 rounded-lg font-bold text-emerald-700 focus:ring-2 focus:ring-amber-500 focus:outline-none"
               />
             </div>

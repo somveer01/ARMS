@@ -1181,8 +1181,12 @@ export const MasterSetup: React.FC = () => {
                     <label className="block text-slate-700 font-medium mb-1">{t.purchasePrice} (₹)</label>
                     <input
                       type="number"
-                      value={newProd.purchasePrice}
-                      onChange={e => setNewProd({ ...newProd, purchasePrice: Number(e.target.value) })}
+                      min="0"
+                      step="any"
+                      placeholder="0"
+                      value={!newProd.purchasePrice ? '' : newProd.purchasePrice}
+                      onFocus={e => e.target.select()}
+                      onChange={e => setNewProd({ ...newProd, purchasePrice: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
                       className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     />
                   </div>
@@ -1190,8 +1194,12 @@ export const MasterSetup: React.FC = () => {
                     <label className="block text-slate-700 font-medium mb-1">{t.sellingPrice} (₹)</label>
                     <input
                       type="number"
-                      value={newProd.sellingPrice}
-                      onChange={e => setNewProd({ ...newProd, sellingPrice: Number(e.target.value) })}
+                      min="0"
+                      step="any"
+                      placeholder="0"
+                      value={!newProd.sellingPrice ? '' : newProd.sellingPrice}
+                      onFocus={e => e.target.select()}
+                      onChange={e => setNewProd({ ...newProd, sellingPrice: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
                       className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     />
                   </div>
@@ -1201,8 +1209,11 @@ export const MasterSetup: React.FC = () => {
                     <label className="block text-slate-700 font-medium mb-1">{t.currentStock}</label>
                     <input
                       type="number"
-                      value={newProd.currentStock}
-                      onChange={e => setNewProd({ ...newProd, currentStock: Number(e.target.value) })}
+                      min="0"
+                      placeholder="0"
+                      value={!newProd.currentStock ? '' : newProd.currentStock}
+                      onFocus={e => e.target.select()}
+                      onChange={e => setNewProd({ ...newProd, currentStock: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
                       className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     />
                   </div>
@@ -1210,8 +1221,11 @@ export const MasterSetup: React.FC = () => {
                     <label className="block text-slate-700 font-medium mb-1">{t.minStockAlert}</label>
                     <input
                       type="number"
-                      value={newProd.minStockAlert}
-                      onChange={e => setNewProd({ ...newProd, minStockAlert: Number(e.target.value) })}
+                      min="0"
+                      placeholder="0"
+                      value={!newProd.minStockAlert ? '' : newProd.minStockAlert}
+                      onFocus={e => e.target.select()}
+                      onChange={e => setNewProd({ ...newProd, minStockAlert: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
                       className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     />
                   </div>
@@ -1677,11 +1691,13 @@ export const MasterSetup: React.FC = () => {
                         type="number"
                         min="0"
                         step="any"
-                        value={editingItem.item.purchasePrice || 0}
+                        placeholder="0"
+                        value={!editingItem.item.purchasePrice ? '' : editingItem.item.purchasePrice}
+                        onFocus={e => e.target.select()}
                         onChange={e =>
                           setEditingItem({
                             ...editingItem,
-                            item: { ...editingItem.item, purchasePrice: Number(e.target.value) },
+                            item: { ...editingItem.item, purchasePrice: e.target.value === '' ? ('' as any) : Number(e.target.value) },
                           })
                         }
                         className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -1693,11 +1709,13 @@ export const MasterSetup: React.FC = () => {
                         type="number"
                         min="0"
                         step="any"
-                        value={editingItem.item.sellingPrice || 0}
+                        placeholder="0"
+                        value={!editingItem.item.sellingPrice ? '' : editingItem.item.sellingPrice}
+                        onFocus={e => e.target.select()}
                         onChange={e =>
                           setEditingItem({
                             ...editingItem,
-                            item: { ...editingItem.item, sellingPrice: Number(e.target.value) },
+                            item: { ...editingItem.item, sellingPrice: e.target.value === '' ? ('' as any) : Number(e.target.value) },
                           })
                         }
                         className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -1711,11 +1729,13 @@ export const MasterSetup: React.FC = () => {
                       <input
                         type="number"
                         min="0"
-                        value={editingItem.item.currentStock || 0}
+                        placeholder="0"
+                        value={!editingItem.item.currentStock ? '' : editingItem.item.currentStock}
+                        onFocus={e => e.target.select()}
                         onChange={e =>
                           setEditingItem({
                             ...editingItem,
-                            item: { ...editingItem.item, currentStock: Number(e.target.value) },
+                            item: { ...editingItem.item, currentStock: e.target.value === '' ? ('' as any) : Number(e.target.value) },
                           })
                         }
                         className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -1726,11 +1746,13 @@ export const MasterSetup: React.FC = () => {
                       <input
                         type="number"
                         min="0"
-                        value={editingItem.item.minStockAlert || 0}
+                        placeholder="0"
+                        value={!editingItem.item.minStockAlert ? '' : editingItem.item.minStockAlert}
+                        onFocus={e => e.target.select()}
                         onChange={e =>
                           setEditingItem({
                             ...editingItem,
-                            item: { ...editingItem.item, minStockAlert: Number(e.target.value) },
+                            item: { ...editingItem.item, minStockAlert: e.target.value === '' ? ('' as any) : Number(e.target.value) },
                           })
                         }
                         className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"

@@ -40,9 +40,9 @@ export const FarmerRegistration: React.FC<FarmerRegistrationProps> = ({
   const [mobile, setMobile] = useState('');
   const [districtId, setDistrictId] = useState(districts[0]?.id || '');
   const [villageId, setVillageId] = useState(villages[0]?.id || '');
-  const [landAcreage, setLandAcreage] = useState<number>(0);
-  const [creditLimit, setCreditLimit] = useState<number>(50000);
-  const [openingDue, setOpeningDue] = useState<number>(0);
+  const [landAcreage, setLandAcreage] = useState<number | string>('');
+  const [creditLimit, setCreditLimit] = useState<number | string>(50000);
+  const [openingDue, setOpeningDue] = useState<number | string>('');
 
   // Auto-transliterate Farmer Name (English -> Hindi)
   const {
@@ -90,8 +90,9 @@ export const FarmerRegistration: React.FC<FarmerRegistrationProps> = ({
     setFatherNameHi('');
     resetFatherManual();
     setMobile('');
-    setLandAcreage(0);
-    setOpeningDue(0);
+    setLandAcreage('');
+    setCreditLimit(50000);
+    setOpeningDue('');
   };
 
   // Filtered farmers list
@@ -445,8 +446,11 @@ export const FarmerRegistration: React.FC<FarmerRegistrationProps> = ({
                   <input
                     type="number"
                     min="0"
-                    value={landAcreage}
-                    onChange={e => setLandAcreage(Number(e.target.value))}
+                    step="any"
+                    placeholder="0"
+                    value={landAcreage === 0 || landAcreage === '' ? '' : landAcreage}
+                    onFocus={e => e.target.select()}
+                    onChange={e => setLandAcreage(e.target.value === '' ? '' : Number(e.target.value))}
                     className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                   />
                 </div>
@@ -455,8 +459,11 @@ export const FarmerRegistration: React.FC<FarmerRegistrationProps> = ({
                   <input
                     type="number"
                     min="0"
-                    value={creditLimit}
-                    onChange={e => setCreditLimit(Number(e.target.value))}
+                    step="any"
+                    placeholder="50000"
+                    value={creditLimit === 0 || creditLimit === '' ? '' : creditLimit}
+                    onFocus={e => e.target.select()}
+                    onChange={e => setCreditLimit(e.target.value === '' ? '' : Number(e.target.value))}
                     className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                   />
                 </div>
@@ -465,8 +472,11 @@ export const FarmerRegistration: React.FC<FarmerRegistrationProps> = ({
                   <input
                     type="number"
                     min="0"
-                    value={openingDue}
-                    onChange={e => setOpeningDue(Number(e.target.value))}
+                    step="any"
+                    placeholder="0"
+                    value={openingDue === 0 || openingDue === '' ? '' : openingDue}
+                    onFocus={e => e.target.select()}
+                    onChange={e => setOpeningDue(e.target.value === '' ? '' : Number(e.target.value))}
                     className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none text-rose-600 font-bold"
                   />
                 </div>

@@ -48,8 +48,8 @@ export const SalesEntry: React.FC<SalesEntryProps> = ({
     },
   ]);
 
-  const [discount, setDiscount] = useState<number>(0);
-  const [paidAmount, setPaidAmount] = useState<number>(0);
+  const [discount, setDiscount] = useState<number | string>('');
+  const [paidAmount, setPaidAmount] = useState<number | string>('');
   const [paymentMode, setPaymentMode] = useState<'cash' | 'upi' | 'bank' | 'cheque'>('cash');
   const [notes, setNotes] = useState('');
 
@@ -63,9 +63,9 @@ export const SalesEntry: React.FC<SalesEntryProps> = ({
   const farmerVillage = villages.find(v => v.id === selectedFarmer?.villageId);
 
   // Calculations
-  const subTotal = items.reduce((sum, item) => sum + item.totalCost, 0);
-  const grandTotal = Math.max(0, subTotal - discount);
-  const remainingDue = Math.max(0, grandTotal - paidAmount);
+  const subTotal = items.reduce((sum, item) => sum + (Number(item.totalCost) || 0), 0);
+  const grandTotal = Math.max(0, subTotal - (Number(discount) || 0));
+  const remainingDue = Math.max(0, grandTotal - (Number(paidAmount) || 0));
   const farmerPrevDue = selectedFarmer?.currentDue || 0;
   const farmerNewDue = farmerPrevDue + remainingDue;
 
@@ -74,7 +74,7 @@ export const SalesEntry: React.FC<SalesEntryProps> = ({
     const u = units.find(unit => unit.id === prod?.unitId);
     const updated = [...items];
     const unitRate = prod?.sellingPrice || 0;
-    const qty = updated[index].quantity;
+    const qty = Number(updated[index].quantity) || 1;
 
     updated[index] = {
       productId: prodId,
@@ -87,17 +87,19 @@ export const SalesEntry: React.FC<SalesEntryProps> = ({
     setItems(updated);
   };
 
-  const handleQtyChange = (index: number, qty: number) => {
+  const handleQtyChange = (index: number, qty: any) => {
     const updated = [...items];
-    updated[index].quantity = qty;
-    updated[index].totalCost = qty * updated[index].unitRate;
+    const numQty = qty === '' ? '' : Number(qty);
+    updated[index].quantity = numQty as any;
+    updated[index].totalCost = (Number(numQty) || 0) * (Number(updated[index].unitRate) || 0);
     setItems(updated);
   };
 
-  const handleRateChange = (index: number, rate: number) => {
+  const handleRateChange = (index: number, rate: any) => {
     const updated = [...items];
-    updated[index].unitRate = rate;
-    updated[index].totalCost = updated[index].quantity * rate;
+    const numRate = rate === '' ? '' : Number(rate);
+    updated[index].unitRate = numRate as any;
+    updated[index].totalCost = (Number(updated[index].quantity) || 0) * (Number(numRate) || 0);
     setItems(updated);
   };
 
@@ -133,11 +135,16 @@ export const SalesEntry: React.FC<SalesEntryProps> = ({
       farmerMobile: selectedFarmer?.mobile || '',
       farmerVillage: farmerVillage ? (language === 'hi' ? farmerVillage.nameHi || farmerVillage.name : farmerVillage.name) : '',
       saleDate,
-      items,
+      items: items.map(item => ({
+        ...item,
+        quantity: Number(item.quantity) || 1,
+        unitRate: Number(item.unitRate) || 0,
+        totalCost: (Number(item.quantity) || 1) * (Number(item.unitRate) || 0),
+      })),
       subTotal,
-      discount: Number(discount),
+      discount: Number(discount) || 0,
       grandTotal,
-      paidAmount: Number(paidAmount),
+      paidAmount: Number(paidAmount) || 0,
       remainingDue,
       paymentMode,
       notes,
@@ -159,8 +166,8 @@ export const SalesEntry: React.FC<SalesEntryProps> = ({
         totalCost: products[0]?.sellingPrice || 0,
       },
     ]);
-    setDiscount(0);
-    setPaidAmount(0);
+    setDiscount('');
+    setPaidAmount('');
     setNotes('');
   };
 
@@ -378,9 +385,12 @@ export const SalesEntry: React.FC<SalesEntryProps> = ({
                     <input
                       type="number"
                       min="1"
+                      step="any"
+                      placeholder="1"
                       required
-                      value={item.quantity}
-                      onChange={e => handleQtyChange(idx, Number(e.target.value))}
+                      value={item.quantity === 0 || (item.quantity as any) === '' ? '' : item.quantity}
+                      onFocus={e => e.target.select()}
+                      onChange={e => handleQtyChange(idx, e.target.value === '' ? '' : Number(e.target.value))}
                       className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-center font-bold"
                     />
                   </div>
@@ -391,9 +401,12 @@ export const SalesEntry: React.FC<SalesEntryProps> = ({
                     <input
                       type="number"
                       min="0"
+                      step="any"
+                      placeholder="0"
                       required
-                      value={item.unitRate}
-                      onChange={e => handleRateChange(idx, Number(e.target.value))}
+                      value={item.unitRate === 0 || (item.unitRate as any) === '' ? '' : item.unitRate}
+                      onFocus={e => e.target.select()}
+                      onChange={e => handleRateChange(idx, e.target.value === '' ? '' : Number(e.target.value))}
                       className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none text-right font-medium"
                     />
                   </div>
@@ -445,8 +458,11 @@ export const SalesEntry: React.FC<SalesEntryProps> = ({
               <input
                 type="number"
                 min="0"
-                value={discount}
-                onChange={e => setDiscount(Number(e.target.value))}
+                step="any"
+                placeholder="0"
+                value={discount === 0 || (discount as any) === '' ? '' : discount}
+                onFocus={e => e.target.select()}
+                onChange={e => setDiscount(e.target.value === '' ? ('' as any) : Number(e.target.value))}
                 className="w-full p-1.5 border border-slate-300 rounded-lg font-semibold focus:ring-2 focus:ring-rose-500 focus:outline-none"
               />
             </div>
@@ -488,8 +504,11 @@ export const SalesEntry: React.FC<SalesEntryProps> = ({
                   type="number"
                   min="0"
                   max={grandTotal}
-                  value={paidAmount}
-                  onChange={e => setPaidAmount(Number(e.target.value))}
+                  step="any"
+                  placeholder="0"
+                  value={paidAmount === 0 || (paidAmount as any) === '' ? '' : paidAmount}
+                  onFocus={e => e.target.select()}
+                  onChange={e => setPaidAmount(e.target.value === '' ? ('' as any) : Number(e.target.value))}
                   className="w-full p-2.5 bg-white border border-emerald-400 rounded-xl text-lg font-black text-emerald-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
                 <button

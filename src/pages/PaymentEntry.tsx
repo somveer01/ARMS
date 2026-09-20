@@ -36,7 +36,7 @@ export const PaymentEntry: React.FC<PaymentEntryProps> = ({
     `REC-${new Date().getFullYear()}-${String(payments.length + 1).padStart(3, '0')}`
   );
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<number | string>('');
   const [paymentMode, setPaymentMode] = useState<'cash' | 'upi' | 'bank' | 'cheque'>('cash');
   const [referenceNo, setReferenceNo] = useState('');
   const [notes, setNotes] = useState('');
@@ -53,7 +53,7 @@ export const PaymentEntry: React.FC<PaymentEntryProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFarmerId || !amount || amount <= 0) return;
+    if (!selectedFarmerId || !amount || Number(amount) <= 0) return;
 
     const newPayment = createPayment({
       receiptNo,
@@ -72,7 +72,7 @@ export const PaymentEntry: React.FC<PaymentEntryProps> = ({
 
     // Reset Form
     setReceiptNo(`REC-${new Date().getFullYear()}-${String(payments.length + 2).padStart(3, '0')}`);
-    setAmount(0);
+    setAmount('');
     setReferenceNo('');
     setNotes('');
   };
@@ -233,11 +233,13 @@ export const PaymentEntry: React.FC<PaymentEntryProps> = ({
             <input
               type="number"
               min="1"
+              step="any"
               max={currentDue > 0 ? currentDue : 1000000}
               required
-              value={amount || ''}
-              onChange={e => setAmount(Number(e.target.value))}
-              placeholder="Enter amount..."
+              value={amount === 0 || (amount as any) === '' ? '' : amount}
+              onFocus={e => e.target.select()}
+              onChange={e => setAmount(e.target.value === '' ? ('' as any) : Number(e.target.value))}
+              placeholder="0"
               className="w-full p-3 bg-white border border-indigo-300 rounded-xl text-xl font-black text-indigo-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             />
           </div>
