@@ -11,6 +11,9 @@ import {
   Plus,
   Search,
   Check,
+  Filter,
+  X,
+  Tag,
 } from 'lucide-react';
 import { Product, Supplier } from '../types';
 
@@ -33,6 +36,7 @@ export const MasterSetup: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'units' | 'suppliers' | 'villages'>('products');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProductCategory, setSelectedProductCategory] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
 
   // New Product Form State
@@ -151,7 +155,10 @@ export const MasterSetup: React.FC = () => {
   };
 
   const filteredProducts = products.filter(p => {
+    const matchesCategory = selectedProductCategory === 'all' || p.categoryId === selectedProductCategory;
+    if (!matchesCategory) return false;
     const q = searchTerm.toLowerCase();
+    if (!q) return true;
     return p.name.toLowerCase().includes(q) || (p.nameHi && p.nameHi.includes(q)) || (p.batchNo && p.batchNo.toLowerCase().includes(q));
   });
 
@@ -173,7 +180,12 @@ export const MasterSetup: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            if (activeTab === 'products' && selectedProductCategory !== 'all') {
+              setNewProd(prev => ({ ...prev, categoryId: selectedProductCategory }));
+            }
+            setShowAddModal(true);
+          }}
           className="flex items-center justify-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" />
@@ -253,20 +265,106 @@ export const MasterSetup: React.FC = () => {
       {/* Tab 1: Products Table */}
       {activeTab === 'products' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-              <input
-                type="text"
-                placeholder={t.search}
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
+          {/* Top Search & Category Dropdown Bar */}
+          <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder={t.search}
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              {/* Category Dropdown (for quick selection) */}
+              <div className="flex items-center space-x-1.5">
+                <select
+                  value={selectedProductCategory}
+                  onChange={e => setSelectedProductCategory(e.target.value)}
+                  className="p-2 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold text-slate-700 bg-white"
+                >
+                  <option value="all">
+                    {language === 'hi' ? 'सभी श्रेणियां (All Categories)' : 'All Categories'} ({products.length})
+                  </option>
+                  {categories.map(c => {
+                    const count = products.filter(p => p.categoryId === c.id).length;
+                    return (
+                      <option key={c.id} value={c.id}>
+                        {language === 'hi' ? c.nameHi || c.name : c.name} ({count})
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
             </div>
-            <span className="text-xs text-slate-500">
-              {filteredProducts.length} {language === 'hi' ? 'उत्पाद मौजूद' : 'products found'}
-            </span>
+
+            <div className="flex items-center justify-between sm:justify-end gap-2">
+              <span className="text-xs text-slate-500 font-medium">
+                {filteredProducts.length} {language === 'hi' ? 'उत्पाद मौजूद' : 'products found'}
+              </span>
+              {selectedProductCategory !== 'all' && (
+                <button
+                  onClick={() => setSelectedProductCategory('all')}
+                  className="text-xs text-emerald-700 hover:text-emerald-800 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg flex items-center space-x-1 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                  <span>{language === 'hi' ? 'सभी दिखाएं' : 'Show All'}</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Category Filter Pills (Horizontal Scroll) */}
+          <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200/80">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+              <button
+                type="button"
+                onClick={() => setSelectedProductCategory('all')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 ${
+                  selectedProductCategory === 'all'
+                    ? 'bg-emerald-700 text-white shadow-sm ring-2 ring-emerald-500/30'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <span>{language === 'hi' ? 'सभी श्रेणियां' : 'All Categories'}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${
+                    selectedProductCategory === 'all' ? 'bg-emerald-800 text-emerald-100' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {products.length}
+                </span>
+              </button>
+
+              {categories.map(c => {
+                const count = products.filter(p => p.categoryId === c.id).length;
+                const isSelected = selectedProductCategory === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setSelectedProductCategory(c.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 ${
+                      isSelected
+                        ? 'bg-emerald-700 text-white shadow-sm ring-2 ring-emerald-500/30'
+                        : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    <span>{language === 'hi' ? c.nameHi || c.name : c.name}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${
+                        isSelected ? 'bg-emerald-800 text-emerald-100' : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -284,48 +382,79 @@ export const MasterSetup: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredProducts.map((p, idx) => {
-                  const cat = categories.find(c => c.id === p.categoryId);
-                  const u = units.find(unit => unit.id === p.unitId);
-                  const isLow = p.currentStock <= p.minStockAlert;
-
-                  return (
-                    <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-3.5 text-slate-400">{idx + 1}</td>
-                      <td className="p-3.5">
-                        <p className="font-bold text-slate-900">{p.name}</p>
-                        {p.nameHi && <p className="text-xs text-slate-500">{p.nameHi}</p>}
-                        {p.batchNo && (
-                          <span className="inline-block mt-1 text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">
-                            Batch: {p.batchNo}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3.5">
-                        <span className="px-2 py-1 bg-emerald-50 text-emerald-800 rounded-lg text-xs font-semibold">
-                          {language === 'hi' ? cat?.nameHi || cat?.name : cat?.name}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-slate-600">
-                        {language === 'hi' ? u?.nameHi || u?.name : u?.name}
-                      </td>
-                      <td className="p-3.5 text-right font-medium text-slate-600">₹{p.purchasePrice}</td>
-                      <td className="p-3.5 text-right font-bold text-slate-900">₹{p.sellingPrice}</td>
-                      <td className="p-3.5 text-center">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                            isLow
-                              ? 'bg-rose-100 text-rose-800 animate-pulse'
-                              : 'bg-emerald-100 text-emerald-800'
-                          }`}
+                {filteredProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center text-slate-400">
+                      <p className="font-semibold text-sm">
+                        {language === 'hi' ? 'कोई उत्पाद नहीं मिला' : 'No products found'}
+                      </p>
+                      <p className="text-xs mt-1">
+                        {language === 'hi' ? 'सर्च या श्रेणी फ़िल्टर बदलकर देखें' : 'Try adjusting your search or category filter'}
+                      </p>
+                      {selectedProductCategory !== 'all' && (
+                        <button
+                          onClick={() => setSelectedProductCategory('all')}
+                          className="mt-3 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-100"
                         >
-                          {p.currentStock} {u?.shortCode}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-center text-slate-500">{p.minStockAlert} {u?.shortCode}</td>
-                    </tr>
-                  );
-                })}
+                          {language === 'hi' ? 'सभी श्रेणियां दिखाएं' : 'Show All Categories'}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredProducts.map((p, idx) => {
+                    const cat = categories.find(c => c.id === p.categoryId);
+                    const u = units.find(unit => unit.id === p.unitId);
+                    const isLow = p.currentStock <= p.minStockAlert;
+
+                    return (
+                      <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-3.5 text-slate-400">{idx + 1}</td>
+                        <td className="p-3.5">
+                          <p className="font-bold text-slate-900">{p.name}</p>
+                          {p.nameHi && <p className="text-xs text-slate-500">{p.nameHi}</p>}
+                          {p.batchNo && (
+                            <span className="inline-block mt-1 text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">
+                              Batch: {p.batchNo}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedProductCategory(p.categoryId)}
+                            title={language === 'hi' ? 'इस श्रेणी के उत्पाद देखें' : 'Filter by this category'}
+                            className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-transform active:scale-95 ${
+                              selectedProductCategory === p.categoryId
+                                ? 'bg-emerald-700 text-white shadow-sm'
+                                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                            }`}
+                          >
+                            <Tag className="w-3 h-3 opacity-70" />
+                            <span>{language === 'hi' ? cat?.nameHi || cat?.name : cat?.name}</span>
+                          </button>
+                        </td>
+                        <td className="p-3.5 text-slate-600">
+                          {language === 'hi' ? u?.nameHi || u?.name : u?.name}
+                        </td>
+                        <td className="p-3.5 text-right font-medium text-slate-600">₹{p.purchasePrice}</td>
+                        <td className="p-3.5 text-right font-bold text-slate-900">₹{p.sellingPrice}</td>
+                        <td className="p-3.5 text-center">
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                              isLow
+                                ? 'bg-rose-100 text-rose-800 animate-pulse'
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}
+                          >
+                            {p.currentStock} {u?.shortCode}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-center text-slate-500">{p.minStockAlert} {u?.shortCode}</td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -338,13 +467,23 @@ export const MasterSetup: React.FC = () => {
           {categories.map(c => {
             const count = products.filter(p => p.categoryId === c.id).length;
             return (
-              <div key={c.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div
+                key={c.id}
+                onClick={() => {
+                  setSelectedProductCategory(c.id);
+                  setActiveTab('products');
+                }}
+                title={language === 'hi' ? 'इस श्रेणी के उत्पाद देखें' : 'View products in this category'}
+                className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group active:scale-[0.99]"
+              >
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">{c.name}</h3>
+                  <h3 className="font-bold text-slate-900 text-base group-hover:text-emerald-800 transition-colors">{c.name}</h3>
                   <p className="text-emerald-700 text-xs font-semibold mt-0.5">{c.nameHi}</p>
-                  <p className="text-xs text-slate-400 mt-2">{count} {language === 'hi' ? 'उत्पाद पंजीकृत' : 'products linked'}</p>
+                  <p className="text-xs text-slate-400 mt-2">
+                    {count} {language === 'hi' ? 'उत्पाद पंजीकृत (देखने के लिए क्लिक करें →)' : 'products linked (click to view →)'}
+                  </p>
                 </div>
-                <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl">
+                <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                   <Layers className="w-6 h-6" />
                 </div>
               </div>
