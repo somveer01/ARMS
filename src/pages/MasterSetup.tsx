@@ -16,9 +16,14 @@ import {
   Tag,
   Building,
   Sparkles,
+  Edit2,
+  Trash2,
+  AlertTriangle,
+  ShieldAlert,
+  CheckCircle,
 } from 'lucide-react';
-import { Product, Supplier } from '../types';
-import { useAutoHindi } from '../utils/transliterate';
+import { Product, Supplier, Category, Unit, Village, District } from '../types';
+import { useAutoHindi, transliterateToHindi } from '../utils/transliterate';
 
 export const MasterSetup: React.FC = () => {
   const { language, t } = useLanguage();
@@ -29,12 +34,28 @@ export const MasterSetup: React.FC = () => {
     suppliers,
     districts,
     villages,
+    farmers,
+    purchases,
+    sales,
+    stockMovements,
     addProduct,
+    updateProduct,
+    deleteProduct,
     addCategory,
+    updateCategory,
+    deleteCategory,
     addUnit,
+    updateUnit,
+    deleteUnit,
     addSupplier,
+    updateSupplier,
+    deleteSupplier,
     addDistrict,
+    updateDistrict,
+    deleteDistrict,
     addVillage,
+    updateVillage,
+    deleteVillage,
   } = useData();
 
   const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'units' | 'suppliers' | 'villages'>('products');
@@ -43,6 +64,27 @@ export const MasterSetup: React.FC = () => {
   const [selectedProductCategory, setSelectedProductCategory] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDistrictModal, setShowDistrictModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Editing State
+  const [editingItem, setEditingItem] = useState<{
+    type: 'product' | 'category' | 'unit' | 'supplier' | 'village' | 'district';
+    item: any;
+  } | null>(null);
+  const [isTranslatingEdit, setIsTranslatingEdit] = useState(false);
+
+  // Safe Deletion Modals State
+  const [deleteBlockedInfo, setDeleteBlockedInfo] = useState<{
+    title: string;
+    message: string;
+    messageHi: string;
+  } | null>(null);
+
+  const [confirmDeleteInfo, setConfirmDeleteInfo] = useState<{
+    type: 'product' | 'category' | 'unit' | 'supplier' | 'village' | 'district';
+    id: string;
+    name: string;
+  } | null>(null);
 
   // New District Form State
   const [newDist, setNewDist] = useState({
@@ -220,6 +262,218 @@ export const MasterSetup: React.FC = () => {
     setShowAddModal(false);
   };
 
+  // Handle start editing
+  const handleStartEdit = (type: 'product' | 'category' | 'unit' | 'supplier' | 'village' | 'district', item: any) => {
+    setEditingItem({ type, item: { ...item } });
+  };
+
+  // Auto transliterate Hindi for editing item
+  const handleAutoHindiEdit = async () => {
+    if (!editingItem || !editingItem.item.name) return;
+    setIsTranslatingEdit(true);
+    try {
+      const transliterated = await transliterateToHindi(editingItem.item.name);
+      if (transliterated) {
+        setEditingItem(prev => (prev ? { ...prev, item: { ...prev.item, nameHi: transliterated } } : null));
+      }
+    } finally {
+      setIsTranslatingEdit(false);
+    }
+  };
+
+  // Handle saving edits
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    const { type, item } = editingItem;
+
+    if (type === 'product') {
+      updateProduct(item.id, {
+        ...item,
+        purchasePrice: Number(item.purchasePrice) || 0,
+        sellingPrice: Number(item.sellingPrice) || 0,
+        currentStock: Number(item.currentStock) || 0,
+        minStockAlert: Number(item.minStockAlert) || 0,
+      });
+    } else if (type === 'category') {
+      updateCategory(item.id, item);
+    } else if (type === 'unit') {
+      updateUnit(item.id, item);
+    } else if (type === 'supplier') {
+      updateSupplier(item.id, {
+        ...item,
+        openingBalance: Number(item.openingBalance || 0),
+      });
+    } else if (type === 'village') {
+      updateVillage(item.id, item);
+    } else if (type === 'district') {
+      updateDistrict(item.id, item);
+    }
+
+    setSuccessMessage(
+      language === 'hi'
+        ? `"${item.name || item.shortCode || 'रिकॉर्ड'}" को सफलतापूर्वक अपडेट किया गया।`
+        : `"${item.name || item.shortCode || 'Record'}" updated successfully.`
+    );
+    setTimeout(() => setSuccessMessage(''), 4000);
+    setEditingItem(null);
+  };
+
+  // Safe delete check
+  const handleDeleteRequest = (type: 'product' | 'category' | 'unit' | 'supplier' | 'village' | 'district', item: any) => {
+    // 1. Check Product
+    if (type === 'product') {
+      const pCount = purchases.filter(p => p.items && p.items.some(it => it.productId === item.id)).length;
+      const sCount = sales.filter(s => s.items && s.items.some(it => it.productId === item.id)).length;
+      const mCount = stockMovements.filter(m => m.productId === item.id).length;
+
+      if (pCount > 0 || sCount > 0 || mCount > 0) {
+        const parts: string[] = [];
+        const partsHi: string[] = [];
+        if (sCount > 0) {
+          parts.push(`${sCount} sale invoice(s)`);
+          partsHi.push(`${sCount} बिक्री बिल`);
+        }
+        if (pCount > 0) {
+          parts.push(`${pCount} purchase order(s)`);
+          partsHi.push(`${pCount} खरीद बिल`);
+        }
+        if (mCount > 0) {
+          parts.push(`${mCount} stock ledger movement(s)`);
+          partsHi.push(`${mCount} स्टॉक लेजर प्रविष्टियाँ`);
+        }
+
+        setDeleteBlockedInfo({
+          title: language === 'hi' ? 'उत्पाद हटाया नहीं जा सकता' : 'Cannot Delete Product',
+          message: `This product cannot be deleted because it is referenced in: ${parts.join(', ')}. Business records must be preserved.`,
+          messageHi: `इस उत्पाद को हटाया नहीं जा सकता क्योंकि यह निम्नलिखित लेन-देन में दर्ज है: ${partsHi.join(', ')}। वित्तीय व स्टॉक रिकॉर्ड की सुरक्षा हेतु इसे मिटाया नहीं जा सकता।`,
+        });
+        return;
+      }
+    }
+
+    // 2. Check Category
+    if (type === 'category') {
+      const linked = products.filter(p => p.categoryId === item.id);
+      if (linked.length > 0) {
+        const names = linked.slice(0, 3).map(p => p.name).join(', ');
+        const more = linked.length > 3 ? ` and ${linked.length - 3} more` : '';
+        setDeleteBlockedInfo({
+          title: language === 'hi' ? 'श्रेणी हटाई नहीं जा सकती' : 'Cannot Delete Category',
+          message: `This category cannot be deleted because ${linked.length} product(s) are assigned to it (${names}${more}). Reassign or delete those products first.`,
+          messageHi: `इस श्रेणी को हटाया नहीं जा सकता क्योंकि इसमें ${linked.length} उत्पाद जुड़े हैं (${names}${more})। पहले उन उत्पादों की श्रेणी बदलें या हटाएं।`,
+        });
+        return;
+      }
+    }
+
+    // 3. Check Unit
+    if (type === 'unit') {
+      const linked = products.filter(p => p.unitId === item.id);
+      if (linked.length > 0) {
+        const names = linked.slice(0, 3).map(p => p.name).join(', ');
+        const more = linked.length > 3 ? ` and ${linked.length - 3} more` : '';
+        setDeleteBlockedInfo({
+          title: language === 'hi' ? 'इकाई हटाई नहीं जा सकती' : 'Cannot Delete Unit',
+          message: `This unit cannot be deleted because ${linked.length} product(s) are using it (${names}${more}).`,
+          messageHi: `इस इकाई को हटाया नहीं जा सकता क्योंकि ${linked.length} उत्पाद इसका उपयोग कर रहे हैं (${names}${more})।`,
+        });
+        return;
+      }
+    }
+
+    // 4. Check Supplier
+    if (type === 'supplier') {
+      const pCount = purchases.filter(p => p.supplierId === item.id).length;
+      const hasBalance = item && Math.abs(item.currentPayable) > 0.01;
+      if (pCount > 0 || hasBalance) {
+        const parts: string[] = [];
+        const partsHi: string[] = [];
+        if (pCount > 0) {
+          parts.push(`${pCount} purchase invoice(s)`);
+          partsHi.push(`${pCount} खरीद बिल`);
+        }
+        if (hasBalance) {
+          parts.push(`pending payable ₹${item.currentPayable}`);
+          partsHi.push(`देय बकाया ₹${item.currentPayable}`);
+        }
+        setDeleteBlockedInfo({
+          title: language === 'hi' ? 'सप्लायर हटाया नहीं जा सकता' : 'Cannot Delete Supplier',
+          message: `This supplier cannot be deleted because linked records exist: ${parts.join(', ')}.`,
+          messageHi: `इस सप्लायर को हटाया नहीं जा सकता क्योंकि इससे जुड़े रिकॉर्ड मौजूद हैं: ${partsHi.join(', ')}।`,
+        });
+        return;
+      }
+    }
+
+    // 5. Check Village
+    if (type === 'village') {
+      const linked = farmers.filter(f => f.villageId === item.id);
+      if (linked.length > 0) {
+        const names = linked.slice(0, 3).map(f => f.name).join(', ');
+        const more = linked.length > 3 ? ` and ${linked.length - 3} more` : '';
+        setDeleteBlockedInfo({
+          title: language === 'hi' ? 'गाँव हटाया नहीं जा सकता' : 'Cannot Delete Village',
+          message: `This village cannot be deleted because ${linked.length} farmer(s) are registered from it (${names}${more}).`,
+          messageHi: `इस गाँव को हटाया नहीं जा सकता क्योंकि इसमें ${linked.length} किसान पंजीकृत हैं (${names}${more})।`,
+        });
+        return;
+      }
+    }
+
+    // 6. Check District
+    if (type === 'district') {
+      const linkedVils = villages.filter(v => v.districtId === item.id);
+      const linkedFarms = farmers.filter(f => f.districtId === item.id);
+      if (linkedVils.length > 0 || linkedFarms.length > 0) {
+        setDeleteBlockedInfo({
+          title: language === 'hi' ? 'ज़िला हटाया नहीं जा सकता' : 'Cannot Delete District',
+          message: `This district cannot be deleted because ${linkedVils.length} village(s) and ${linkedFarms.length} farmer(s) are linked to it.`,
+          messageHi: `इस ज़िले को हटाया नहीं जा सकता क्योंकि इससे ${linkedVils.length} गाँव और ${linkedFarms.length} किसान जुड़े हुए हैं।`,
+        });
+        return;
+      }
+    }
+
+    // If no relations exist -> Open Confirm Delete Modal
+    setConfirmDeleteInfo({
+      type,
+      id: item.id,
+      name: item.name || item.shortCode || 'Record',
+    });
+  };
+
+  // Execution of confirmed delete
+  const handleConfirmDelete = () => {
+    if (!confirmDeleteInfo) return;
+    const { type, id, name } = confirmDeleteInfo;
+
+    let res: { success: boolean; reason?: string; reasonHi?: string } = { success: true };
+    if (type === 'product') res = deleteProduct(id);
+    else if (type === 'category') res = deleteCategory(id);
+    else if (type === 'unit') res = deleteUnit(id);
+    else if (type === 'supplier') res = deleteSupplier(id);
+    else if (type === 'village') res = deleteVillage(id);
+    else if (type === 'district') res = deleteDistrict(id);
+
+    setConfirmDeleteInfo(null);
+
+    if (res.success) {
+      setSuccessMessage(
+        language === 'hi'
+          ? `"${name}" को सफलतापूर्वक हटा दिया गया है।`
+          : `"${name}" was deleted successfully.`
+      );
+      setTimeout(() => setSuccessMessage(''), 4000);
+    } else {
+      setDeleteBlockedInfo({
+        title: language === 'hi' ? 'हटाया नहीं जा सका' : 'Deletion Blocked',
+        message: res.reason || '',
+        messageHi: res.reasonHi || '',
+      });
+    }
+  };
+
   const filteredProducts = products.filter(p => {
     const matchesCategory = selectedProductCategory === 'all' || p.categoryId === selectedProductCategory;
     if (!matchesCategory) return false;
@@ -282,6 +536,13 @@ export const MasterSetup: React.FC = () => {
           </button>
         )}
       </div>
+
+      {successMessage && (
+        <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center space-x-3 text-emerald-800 font-semibold shadow-sm animate-in fade-in">
+          <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+          <span>{successMessage}</span>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex space-x-2 overflow-x-auto pb-1 border-b border-slate-200 text-xs sm:text-sm">
@@ -463,12 +724,13 @@ export const MasterSetup: React.FC = () => {
                   <th className="p-3.5 text-right">{t.sellingPrice}</th>
                   <th className="p-3.5 text-center">{t.currentStock}</th>
                   <th className="p-3.5 text-center">{t.minStockAlert}</th>
+                  <th className="p-3.5 text-center">{t.actions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-8 text-center text-slate-400">
+                    <td colSpan={9} className="p-8 text-center text-slate-400">
                       <p className="font-semibold text-sm">
                         {language === 'hi' ? 'कोई उत्पाद नहीं मिला' : 'No products found'}
                       </p>
@@ -535,6 +797,26 @@ export const MasterSetup: React.FC = () => {
                           </span>
                         </td>
                         <td className="p-3.5 text-center text-slate-500">{p.minStockAlert} {u?.shortCode}</td>
+                        <td className="p-3.5 text-center">
+                          <div className="flex items-center justify-center space-x-1">
+                            <button
+                              type="button"
+                              onClick={() => handleStartEdit('product', p)}
+                              title={language === 'hi' ? 'उत्पाद संपादित करें' : 'Edit Product'}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteRequest('product', p)}
+                              title={language === 'hi' ? 'उत्पाद हटाएं' : 'Delete Product'}
+                              className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     );
                   })
@@ -553,22 +835,53 @@ export const MasterSetup: React.FC = () => {
             return (
               <div
                 key={c.id}
-                onClick={() => {
-                  setSelectedProductCategory(c.id);
-                  setActiveTab('products');
-                }}
-                title={language === 'hi' ? 'इस श्रेणी के उत्पाद देखें' : 'View products in this category'}
-                className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group active:scale-[0.99]"
+                className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-emerald-500 hover:shadow-md transition-all group"
               >
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base group-hover:text-emerald-800 transition-colors">{c.name}</h3>
-                  <p className="text-emerald-700 text-xs font-semibold mt-0.5">{c.nameHi}</p>
+                <div
+                  onClick={() => {
+                    setSelectedProductCategory(c.id);
+                    setActiveTab('products');
+                  }}
+                  title={language === 'hi' ? 'इस श्रेणी के उत्पाद देखें' : 'View products in this category'}
+                  className="cursor-pointer"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-base group-hover:text-emerald-800 transition-colors">{c.name}</h3>
+                      <p className="text-emerald-700 text-xs font-semibold mt-0.5">{c.nameHi}</p>
+                    </div>
+                    <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                      <Layers className="w-6 h-6" />
+                    </div>
+                  </div>
                   <p className="text-xs text-slate-400 mt-2">
                     {count} {language === 'hi' ? 'उत्पाद पंजीकृत (देखने के लिए क्लिक करें →)' : 'products linked (click to view →)'}
                   </p>
                 </div>
-                <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                  <Layers className="w-6 h-6" />
+
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStartEdit('category', c);
+                    }}
+                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-colors"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>{language === 'hi' ? 'संपादित करें' : 'Edit'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteRequest('category', c);
+                    }}
+                    className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{language === 'hi' ? 'हटाएं' : 'Delete'}</span>
+                  </button>
                 </div>
               </div>
             );
@@ -580,11 +893,31 @@ export const MasterSetup: React.FC = () => {
       {activeTab === 'units' && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {units.map(u => (
-            <div key={u.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Unit Code</span>
-              <h3 className="font-extrabold text-slate-900 text-lg mt-0.5">{u.shortCode}</h3>
-              <p className="text-xs text-slate-700 font-medium mt-1">{u.name}</p>
-              <p className="text-xs text-emerald-700 font-semibold">{u.nameHi}</p>
+            <div key={u.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Unit Code</span>
+                <h3 className="font-extrabold text-slate-900 text-lg mt-0.5">{u.shortCode}</h3>
+                <p className="text-xs text-slate-700 font-medium mt-1">{u.name}</p>
+                <p className="text-xs text-emerald-700 font-semibold">{u.nameHi}</p>
+              </div>
+              <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-end space-x-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleStartEdit('unit', u)}
+                  className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-colors"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>{language === 'hi' ? 'संपादित' : 'Edit'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteRequest('unit', u)}
+                  className="p-1 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{language === 'hi' ? 'हटाएं' : 'Delete'}</span>
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -611,6 +944,24 @@ export const MasterSetup: React.FC = () => {
                   {s.gstin && <p className="font-mono text-[11px]">GST: {s.gstin}</p>}
                   {s.address && <p className="text-slate-400">{s.address}</p>}
                 </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => handleStartEdit('supplier', s)}
+                  className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-colors"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>{language === 'hi' ? 'संपादित' : 'Edit'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteRequest('supplier', s)}
+                  className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{language === 'hi' ? 'हटाएं' : 'Delete'}</span>
+                </button>
               </div>
             </div>
           ))}
@@ -673,7 +1024,7 @@ export const MasterSetup: React.FC = () => {
               {districts.map(d => {
                 const linkedVillages = villages.filter(v => v.districtId === d.id);
                 return (
-                  <div key={d.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                  <div key={d.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="p-3 bg-blue-50 text-blue-700 rounded-xl">
                         <Building className="w-6 h-6" />
@@ -686,6 +1037,24 @@ export const MasterSetup: React.FC = () => {
                         </p>
                       </div>
                     </div>
+                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => handleStartEdit('district', d)}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-colors"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>{language === 'hi' ? 'संपादित' : 'Edit'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRequest('district', d)}
+                        className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{language === 'hi' ? 'हटाएं' : 'Delete'}</span>
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -696,7 +1065,7 @@ export const MasterSetup: React.FC = () => {
               {villages.map(v => {
                 const dist = districts.find(d => d.id === v.districtId);
                 return (
-                  <div key={v.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                  <div key={v.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="p-2.5 bg-cyan-50 text-cyan-700 rounded-xl">
                         <MapPin className="w-5 h-5" />
@@ -708,6 +1077,24 @@ export const MasterSetup: React.FC = () => {
                           {language === 'hi' ? 'ज़िला:' : 'District:'} {language === 'hi' ? dist?.nameHi || dist?.name : dist?.name}
                         </p>
                       </div>
+                    </div>
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-end space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => handleStartEdit('village', v)}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-colors"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>{language === 'hi' ? 'संपादित' : 'Edit'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRequest('village', v)}
+                        className="p-1 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{language === 'hi' ? 'हटाएं' : 'Delete'}</span>
+                      </button>
                     </div>
                   </div>
                 );
@@ -1155,6 +1542,446 @@ export const MasterSetup: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Universal Edit Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-900 text-lg flex items-center space-x-2">
+                <Edit2 className="w-5 h-5 text-blue-600" />
+                <span>
+                  {editingItem.type === 'product' && (language === 'hi' ? 'उत्पाद संपादित करें' : 'Edit Product')}
+                  {editingItem.type === 'category' && (language === 'hi' ? 'श्रेणी संपादित करें' : 'Edit Category')}
+                  {editingItem.type === 'unit' && (language === 'hi' ? 'इकाई संपादित करें' : 'Edit Unit')}
+                  {editingItem.type === 'supplier' && (language === 'hi' ? 'सप्लायर संपादित करें' : 'Edit Supplier')}
+                  {editingItem.type === 'village' && (language === 'hi' ? 'गाँव संपादित करें' : 'Edit Village')}
+                  {editingItem.type === 'district' && (language === 'hi' ? 'ज़िला संपादित करें' : 'Edit District')}
+                </span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingItem(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-3.5 text-xs sm:text-sm">
+              {/* Common Name (English) */}
+              <div>
+                <label className="block text-slate-700 font-medium mb-1">
+                  {language === 'hi' ? 'नाम (English) *' : 'Name (English) *'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingItem.item.name || ''}
+                  onChange={e =>
+                    setEditingItem({
+                      ...editingItem,
+                      item: { ...editingItem.item, name: e.target.value },
+                    })
+                  }
+                  className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Hindi Name with Auto-transliterate Button */}
+              {editingItem.type !== 'supplier' && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-700 font-medium">
+                      {language === 'hi' ? 'नाम (हिन्दी)' : 'Name (Hindi)'}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAutoHindiEdit}
+                      disabled={isTranslatingEdit}
+                      className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 flex items-center space-x-1 transition-colors"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>
+                        {isTranslatingEdit
+                          ? (language === 'hi' ? 'अनुवाद हो रहा है...' : 'Translating...')
+                          : (language === 'hi' ? '✨ ऑटो हिन्दी भरें' : '✨ Fill Auto-Hindi')}
+                      </span>
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={editingItem.item.nameHi || ''}
+                    onChange={e =>
+                      setEditingItem({
+                        ...editingItem,
+                        item: { ...editingItem.item, nameHi: e.target.value },
+                      })
+                    }
+                    className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              )}
+
+              {/* Specific Fields for Product */}
+              {editingItem.type === 'product' && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">{t.productCategory}</label>
+                      <select
+                        value={editingItem.item.categoryId}
+                        onChange={e =>
+                          setEditingItem({
+                            ...editingItem,
+                            item: { ...editingItem.item, categoryId: e.target.value },
+                          })
+                        }
+                        className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      >
+                        {categories.map(c => (
+                          <option key={c.id} value={c.id}>
+                            {language === 'hi' ? c.nameHi || c.name : c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">{t.productUnit}</label>
+                      <select
+                        value={editingItem.item.unitId}
+                        onChange={e =>
+                          setEditingItem({
+                            ...editingItem,
+                            item: { ...editingItem.item, unitId: e.target.value },
+                          })
+                        }
+                        className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      >
+                        {units.map(u => (
+                          <option key={u.id} value={u.id}>
+                            {u.name} ({u.shortCode})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">{t.purchasePrice} (₹)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={editingItem.item.purchasePrice || 0}
+                        onChange={e =>
+                          setEditingItem({
+                            ...editingItem,
+                            item: { ...editingItem.item, purchasePrice: Number(e.target.value) },
+                          })
+                        }
+                        className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">{t.sellingPrice} (₹)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={editingItem.item.sellingPrice || 0}
+                        onChange={e =>
+                          setEditingItem({
+                            ...editingItem,
+                            item: { ...editingItem.item, sellingPrice: Number(e.target.value) },
+                          })
+                        }
+                        className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">{t.currentStock}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editingItem.item.currentStock || 0}
+                        onChange={e =>
+                          setEditingItem({
+                            ...editingItem,
+                            item: { ...editingItem.item, currentStock: Number(e.target.value) },
+                          })
+                        }
+                        className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">{t.minStockAlert}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editingItem.item.minStockAlert || 0}
+                        onChange={e =>
+                          setEditingItem({
+                            ...editingItem,
+                            item: { ...editingItem.item, minStockAlert: Number(e.target.value) },
+                          })
+                        }
+                        className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">Batch No</label>
+                      <input
+                        type="text"
+                        value={editingItem.item.batchNo || ''}
+                        onChange={e =>
+                          setEditingItem({
+                            ...editingItem,
+                            item: { ...editingItem.item, batchNo: e.target.value },
+                          })
+                        }
+                        className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">HSN Code</label>
+                      <input
+                        type="text"
+                        value={editingItem.item.hsnCode || ''}
+                        onChange={e =>
+                          setEditingItem({
+                            ...editingItem,
+                            item: { ...editingItem.item, hsnCode: e.target.value },
+                          })
+                        }
+                        className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Specific Fields for Unit */}
+              {editingItem.type === 'unit' && (
+                <div>
+                  <label className="block text-slate-700 font-medium mb-1">Short Code *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingItem.item.shortCode || ''}
+                    onChange={e =>
+                      setEditingItem({
+                        ...editingItem,
+                        item: { ...editingItem.item, shortCode: e.target.value },
+                      })
+                    }
+                    className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              )}
+
+              {/* Specific Fields for Supplier */}
+              {editingItem.type === 'supplier' && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">{t.companyName}</label>
+                      <input
+                        type="text"
+                        value={editingItem.item.company || ''}
+                        onChange={e =>
+                          setEditingItem({
+                            ...editingItem,
+                            item: { ...editingItem.item, company: e.target.value },
+                          })
+                        }
+                        className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-1">{t.phone} *</label>
+                      <input
+                        type="tel"
+                        required
+                        value={editingItem.item.phone || ''}
+                        onChange={e =>
+                          setEditingItem({
+                            ...editingItem,
+                            item: { ...editingItem.item, phone: e.target.value },
+                          })
+                        }
+                        className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-medium mb-1">{t.gstin}</label>
+                    <input
+                      type="text"
+                      value={editingItem.item.gstin || ''}
+                      onChange={e =>
+                        setEditingItem({
+                          ...editingItem,
+                          item: { ...editingItem.item, gstin: e.target.value },
+                        })
+                      }
+                      className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none uppercase font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-medium mb-1">
+                      {language === 'hi' ? 'पता' : 'Address'}
+                    </label>
+                    <input
+                      type="text"
+                      value={editingItem.item.address || ''}
+                      onChange={e =>
+                        setEditingItem({
+                          ...editingItem,
+                          item: { ...editingItem.item, address: e.target.value },
+                        })
+                      }
+                      className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Specific Fields for Village */}
+              {editingItem.type === 'village' && (
+                <div>
+                  <label className="block text-slate-700 font-medium mb-1">{t.districtName} *</label>
+                  <select
+                    value={editingItem.item.districtId}
+                    onChange={e =>
+                      setEditingItem({
+                        ...editingItem,
+                        item: { ...editingItem.item, districtId: e.target.value },
+                      })
+                    }
+                    className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  >
+                    {districts.map(d => (
+                      <option key={d.id} value={d.id}>
+                        {language === 'hi' ? d.nameHi || d.name : d.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="px-4 py-2 border border-slate-300 rounded-xl font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow"
+                >
+                  {language === 'hi' ? 'अपडेट सुरक्षित करें' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Deletion Blocked Modal (Referential Integrity Rule Check) */}
+      {deleteBlockedInfo && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-rose-200 animate-in fade-in zoom-in-95">
+            <div className="flex items-center space-x-3 text-rose-600 mb-3">
+              <div className="p-3 bg-rose-50 rounded-2xl">
+                <ShieldAlert className="w-8 h-8 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900">{deleteBlockedInfo.title}</h3>
+                <span className="text-xs font-bold text-rose-600 uppercase tracking-wider">
+                  {language === 'hi' ? 'सम्बद्ध प्रविष्टियां मौजूद हैं' : 'Dependent Records Exist'}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-slate-700 text-xs sm:text-sm font-medium mt-3 leading-relaxed">
+              {language === 'hi' ? deleteBlockedInfo.messageHi : deleteBlockedInfo.message}
+            </p>
+
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start space-x-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <span>
+                {language === 'hi'
+                  ? 'डेटा सुरक्षा नियम: जब तक सम्बद्ध लेन-देन/रिकॉर्ड मौजूद हैं, यह मास्टर रिकॉर्ड मिटाया नहीं जा सकता ताकि आपकी बिलिंग व लेजर रिपोर्ट सुरक्षित रहे।'
+                  : 'Referential Integrity: This record cannot be deleted while dependent transactions exist to safeguard your financial and inventory reports.'}
+              </span>
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setDeleteBlockedInfo(null)}
+                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs sm:text-sm shadow"
+              >
+                {language === 'hi' ? 'समझ गया (बंद करें)' : 'Understood (Close)'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Deletion Modal (When No Dependencies Exist) */}
+      {confirmDeleteInfo && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200 animate-in fade-in zoom-in-95">
+            <div className="flex items-center space-x-3 text-rose-600 mb-3">
+              <div className="p-3 bg-rose-50 rounded-2xl">
+                <Trash2 className="w-8 h-8 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900">
+                  {language === 'hi' ? 'हटाने की पुष्टि करें' : 'Confirm Deletion'}
+                </h3>
+                <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">
+                  {language === 'hi' ? 'कोई सम्बद्ध रिकॉर्ड नहीं' : 'Safe To Delete'}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-slate-700 text-xs sm:text-sm font-medium mt-3 leading-relaxed">
+              {language === 'hi'
+                ? `क्या आप वाकई "${confirmDeleteInfo.name}" को हटाना चाहते हैं? कोई सम्बद्ध रिकॉर्ड नहीं मिला है, अतः इसे सुरक्षित रूप से हटाया जा सकता है।`
+                : `Are you sure you want to delete "${confirmDeleteInfo.name}"? No dependent records exist, so it can be safely removed.`}
+            </p>
+
+            <div className="mt-5 flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteInfo(null)}
+                className="px-4 py-2 border border-slate-300 rounded-xl font-medium text-slate-700 hover:bg-slate-50 text-xs sm:text-sm"
+              >
+                {t.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs sm:text-sm shadow"
+              >
+                {language === 'hi' ? 'हाँ, हटाएं' : 'Yes, Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}

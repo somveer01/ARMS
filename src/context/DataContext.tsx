@@ -13,6 +13,12 @@ import {
   StockMovement,
 } from '../types';
 
+export interface DeleteResult {
+  success: boolean;
+  reason?: string;
+  reasonHi?: string;
+}
+
 interface DataContextType {
   categories: Category[];
   units: Unit[];
@@ -28,12 +34,29 @@ interface DataContextType {
 
   // Mutations
   addCategory: (item: Omit<Category, 'id'>) => void;
+  updateCategory: (id: string, item: Partial<Category>) => void;
+  deleteCategory: (id: string) => DeleteResult;
+
   addUnit: (item: Omit<Unit, 'id'>) => void;
+  updateUnit: (id: string, item: Partial<Unit>) => void;
+  deleteUnit: (id: string) => DeleteResult;
+
   addProduct: (item: Omit<Product, 'id' | 'createdAt'>) => void;
   updateProduct: (id: string, item: Partial<Product>) => void;
+  deleteProduct: (id: string) => DeleteResult;
+
   addSupplier: (item: Omit<Supplier, 'id' | 'currentPayable' | 'createdAt'>) => void;
+  updateSupplier: (id: string, item: Partial<Supplier>) => void;
+  deleteSupplier: (id: string) => DeleteResult;
+
   addDistrict: (item: Omit<District, 'id'>) => District;
+  updateDistrict: (id: string, item: Partial<District>) => void;
+  deleteDistrict: (id: string) => DeleteResult;
+
   addVillage: (item: Omit<Village, 'id'>) => Village;
+  updateVillage: (id: string, item: Partial<Village>) => void;
+  deleteVillage: (id: string) => DeleteResult;
+
   addFarmer: (item: Omit<Farmer, 'id' | 'currentDue' | 'createdAt'>) => Farmer;
   updateFarmer: (id: string, item: Partial<Farmer>) => void;
 
@@ -231,17 +254,57 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('arms_stock_movements', JSON.stringify(stockMovements));
   }, [stockMovements]);
 
-  // Mutations
+  // Category Mutations
   const addCategory = (item: Omit<Category, 'id'>) => {
     const newCat: Category = { ...item, id: `cat-${Date.now()}` };
     setCategories(prev => [...prev, newCat]);
   };
 
+  const updateCategory = (id: string, item: Partial<Category>) => {
+    setCategories(prev => prev.map(c => (c.id === id ? { ...c, ...item } : c)));
+  };
+
+  const deleteCategory = (id: string): DeleteResult => {
+    const linkedProducts = products.filter(p => p.categoryId === id);
+    if (linkedProducts.length > 0) {
+      const names = linkedProducts.slice(0, 3).map(p => p.name).join(', ');
+      const more = linkedProducts.length > 3 ? '...' : '';
+      return {
+        success: false,
+        reason: `Cannot delete category: ${linkedProducts.length} product(s) are linked to it (${names}${more}).`,
+        reasonHi: `श्रेणी नहीं हटाई जा सकती: इससे जुड़े ${linkedProducts.length} उत्पाद मौजूद हैं (${names}${more})। पहले उन उत्पादों की श्रेणी बदलें या हटाएं।`,
+      };
+    }
+    setCategories(prev => prev.filter(c => c.id !== id));
+    return { success: true };
+  };
+
+  // Unit Mutations
   const addUnit = (item: Omit<Unit, 'id'>) => {
     const newUnit: Unit = { ...item, id: `unit-${Date.now()}` };
     setUnits(prev => [...prev, newUnit]);
   };
 
+  const updateUnit = (id: string, item: Partial<Unit>) => {
+    setUnits(prev => prev.map(u => (u.id === id ? { ...u, ...item } : u)));
+  };
+
+  const deleteUnit = (id: string): DeleteResult => {
+    const linkedProducts = products.filter(p => p.unitId === id);
+    if (linkedProducts.length > 0) {
+      const names = linkedProducts.slice(0, 3).map(p => p.name).join(', ');
+      const more = linkedProducts.length > 3 ? '...' : '';
+      return {
+        success: false,
+        reason: `Cannot delete unit: ${linkedProducts.length} product(s) are using this unit (${names}${more}).`,
+        reasonHi: `इकाई नहीं हटाई जा सकती: ${linkedProducts.length} उत्पाद इस इकाई का उपयोग कर रहे हैं (${names}${more})।`,
+      };
+    }
+    setUnits(prev => prev.filter(u => u.id !== id));
+    return { success: true };
+  };
+
+  // Product Mutations
   const addProduct = (item: Omit<Product, 'id' | 'createdAt'>) => {
     const newProd: Product = {
       ...item,
@@ -255,6 +318,37 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProducts(prev => prev.map(p => (p.id === id ? { ...p, ...item } : p)));
   };
 
+  const deleteProduct = (id: string): DeleteResult => {
+    const purchaseCount = purchases.filter(p => p.items && p.items.some(it => it.productId === id)).length;
+    const saleCount = sales.filter(s => s.items && s.items.some(it => it.productId === id)).length;
+    const movementCount = stockMovements.filter(m => m.productId === id).length;
+
+    if (purchaseCount > 0 || saleCount > 0 || movementCount > 0) {
+      const parts: string[] = [];
+      const partsHi: string[] = [];
+      if (saleCount > 0) {
+        parts.push(`${saleCount} sale invoice(s)`);
+        partsHi.push(`${saleCount} बिक्री बिल`);
+      }
+      if (purchaseCount > 0) {
+        parts.push(`${purchaseCount} purchase order(s)`);
+        partsHi.push(`${purchaseCount} खरीद बिल`);
+      }
+      if (movementCount > 0) {
+        parts.push(`${movementCount} stock ledger movement(s)`);
+        partsHi.push(`${movementCount} स्टॉक लेजर एंट्री`);
+      }
+      return {
+        success: false,
+        reason: `Cannot delete product: Active transaction records exist (${parts.join(', ')}).`,
+        reasonHi: `उत्पाद नहीं हटाया जा सकता: इससे जुड़े सक्रिय लेन-देन रिकॉर्ड मौजूद हैं (${partsHi.join(', ')})।`,
+      };
+    }
+    setProducts(prev => prev.filter(p => p.id !== id));
+    return { success: true };
+  };
+
+  // Supplier Mutations
   const addSupplier = (item: Omit<Supplier, 'id' | 'currentPayable' | 'createdAt'>) => {
     const newSup: Supplier = {
       ...item,
@@ -265,16 +359,84 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSuppliers(prev => [...prev, newSup]);
   };
 
+  const updateSupplier = (id: string, item: Partial<Supplier>) => {
+    setSuppliers(prev => prev.map(s => (s.id === id ? { ...s, ...item } : s)));
+  };
+
+  const deleteSupplier = (id: string): DeleteResult => {
+    const purchaseCount = purchases.filter(p => p.supplierId === id).length;
+    const sup = suppliers.find(s => s.id === id);
+    const hasBalance = sup && Math.abs(sup.currentPayable) > 0.01;
+
+    if (purchaseCount > 0 || hasBalance) {
+      const parts: string[] = [];
+      const partsHi: string[] = [];
+      if (purchaseCount > 0) {
+        parts.push(`${purchaseCount} purchase invoice(s)`);
+        partsHi.push(`${purchaseCount} खरीद इनवॉइस`);
+      }
+      if (hasBalance) {
+        parts.push(`pending balance ₹${sup?.currentPayable}`);
+        partsHi.push(`देय बकाया ₹${sup?.currentPayable}`);
+      }
+      return {
+        success: false,
+        reason: `Cannot delete supplier: Linked records exist (${parts.join(', ')}).`,
+        reasonHi: `सप्लायर नहीं हटाया जा सकता: इससे जुड़े रिकॉर्ड मौजूद हैं (${partsHi.join(', ')})।`,
+      };
+    }
+    setSuppliers(prev => prev.filter(s => s.id !== id));
+    return { success: true };
+  };
+
+  // District Mutations
   const addDistrict = (item: Omit<District, 'id'>): District => {
     const newDist: District = { ...item, id: `dist-${Date.now()}` };
     setDistricts(prev => [...prev, newDist]);
     return newDist;
   };
 
+  const updateDistrict = (id: string, item: Partial<District>) => {
+    setDistricts(prev => prev.map(d => (d.id === id ? { ...d, ...item } : d)));
+  };
+
+  const deleteDistrict = (id: string): DeleteResult => {
+    const linkedVillages = villages.filter(v => v.districtId === id);
+    const linkedFarmers = farmers.filter(f => f.districtId === id);
+
+    if (linkedVillages.length > 0 || linkedFarmers.length > 0) {
+      return {
+        success: false,
+        reason: `Cannot delete district: ${linkedVillages.length} village(s) and ${linkedFarmers.length} farmer(s) are linked to it.`,
+        reasonHi: `ज़िला नहीं हटाया जा सकता: इससे ${linkedVillages.length} गाँव और ${linkedFarmers.length} किसान जुड़े हुए हैं।`,
+      };
+    }
+    setDistricts(prev => prev.filter(d => d.id !== id));
+    return { success: true };
+  };
+
+  // Village Mutations
   const addVillage = (item: Omit<Village, 'id'>): Village => {
     const newVil: Village = { ...item, id: `vil-${Date.now()}` };
     setVillages(prev => [...prev, newVil]);
     return newVil;
+  };
+
+  const updateVillage = (id: string, item: Partial<Village>) => {
+    setVillages(prev => prev.map(v => (v.id === id ? { ...v, ...item } : v)));
+  };
+
+  const deleteVillage = (id: string): DeleteResult => {
+    const linkedFarmers = farmers.filter(f => f.villageId === id);
+    if (linkedFarmers.length > 0) {
+      return {
+        success: false,
+        reason: `Cannot delete village: ${linkedFarmers.length} farmer(s) are registered in this village.`,
+        reasonHi: `गाँव नहीं हटाया जा सकता: इस गाँव में ${linkedFarmers.length} किसान पंजीकृत हैं।`,
+      };
+    }
+    setVillages(prev => prev.filter(v => v.id !== id));
+    return { success: true };
   };
 
   const addFarmer = (item: Omit<Farmer, 'id' | 'currentDue' | 'createdAt'>): Farmer => {
@@ -476,12 +638,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         payments,
         stockMovements,
         addCategory,
+        updateCategory,
+        deleteCategory,
         addUnit,
+        updateUnit,
+        deleteUnit,
         addProduct,
         updateProduct,
+        deleteProduct,
         addSupplier,
+        updateSupplier,
+        deleteSupplier,
         addDistrict,
+        updateDistrict,
+        deleteDistrict,
         addVillage,
+        updateVillage,
+        deleteVillage,
         addFarmer,
         updateFarmer,
         createPurchase,
