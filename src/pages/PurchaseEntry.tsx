@@ -11,10 +11,11 @@ import {
   Building,
 } from 'lucide-react';
 import { PurchaseItem } from '../types';
+import { SearchableProductSelect } from '../components/SearchableProductSelect';
 
 export const PurchaseEntry: React.FC = () => {
   const { language, t } = useLanguage();
-  const { suppliers, products, units, createPurchase, purchases } = useData();
+  const { suppliers, products, categories, units, createPurchase, purchases } = useData();
 
   const [supplierId, setSupplierId] = useState(suppliers[0]?.id || '');
   const [invoiceNo, setInvoiceNo] = useState(`PUR-${new Date().getFullYear()}-${String(purchases.length + 1).padStart(3, '0')}`);
@@ -266,19 +267,17 @@ export const PurchaseEntry: React.FC = () => {
                   className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center text-xs sm:text-sm"
                 >
                   {/* Product Dropdown */}
-                  <div className="sm:col-span-4">
+                  <div className="sm:col-span-5">
                     <label className="block text-slate-500 text-[11px] mb-1">{t.selectProduct}</label>
-                    <select
+                    <SearchableProductSelect
                       value={item.productId}
-                      onChange={e => handleProductChange(idx, e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none font-medium"
-                    >
-                      {products.map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} {language === 'hi' && p.nameHi ? `(${p.nameHi})` : ''}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={prodId => handleProductChange(idx, prodId)}
+                      products={products}
+                      categories={categories}
+                      units={units}
+                      priceType="purchase"
+                      themeColor="amber"
+                    />
                   </div>
 
                   {/* Quantity */}
@@ -310,7 +309,7 @@ export const PurchaseEntry: React.FC = () => {
                   </div>
 
                   {/* Total Cost (Auto) */}
-                  <div className="sm:col-span-3">
+                  <div className="sm:col-span-2">
                     <label className="block text-slate-500 text-[11px] mb-1 font-bold text-amber-800">
                       {t.totalPurchaseCost}
                     </label>

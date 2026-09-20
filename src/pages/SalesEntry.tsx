@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { SaleItem, Sale, Farmer } from '../types';
 import { ReceiptModal } from '../components/ReceiptModal';
+import { SearchableProductSelect } from '../components/SearchableProductSelect';
 
 interface SalesEntryProps {
   initialFarmer?: Farmer | null;
@@ -26,7 +27,7 @@ export const SalesEntry: React.FC<SalesEntryProps> = ({
   onClearInitialFarmer,
 }) => {
   const { language, t } = useLanguage();
-  const { products, units, farmers, villages, createSale, sales } = useData();
+  const { products, categories, units, farmers, villages, createSale, sales } = useData();
 
   const [selectedFarmerId, setSelectedFarmerId] = useState<string>(initialFarmer?.id || farmers[0]?.id || '');
   const [farmerSearchQuery, setFarmerSearchQuery] = useState('');
@@ -342,17 +343,15 @@ export const SalesEntry: React.FC<SalesEntryProps> = ({
                   {/* Product Dropdown */}
                   <div className="sm:col-span-5">
                     <label className="block text-slate-500 text-[11px] mb-1">{t.selectProduct}</label>
-                    <select
+                    <SearchableProductSelect
                       value={item.productId}
-                      onChange={e => handleProductChange(idx, e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none font-medium"
-                    >
-                      {products.map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} {language === 'hi' && p.nameHi ? `(${p.nameHi})` : ''} — Stock: {p.currentStock}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={prodId => handleProductChange(idx, prodId)}
+                      products={products}
+                      categories={categories}
+                      units={units}
+                      priceType="selling"
+                      themeColor="rose"
+                    />
 
                     {/* Stock Alert */}
                     <div className="mt-1 flex items-center space-x-2 text-[11px]">
