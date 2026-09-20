@@ -109,9 +109,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (saved) {
         try {
           const existing: Product[] = JSON.parse(saved);
-          const existingIds = new Set(existing.map(p => p.id));
+          // Prune any deleted MGS product IDs or names
+          const removedProductIds = new Set([
+            'prod-ins-50',
+            'prod-ins-51',
+            'prod-fung-24',
+            'prod-fung-25',
+            'prod-herb-36',
+            'prod-pgr-13',
+            'prod-pgr-14',
+            'prod-bio-7',
+          ]);
+          const cleaned = existing.filter(
+            p =>
+              !removedProductIds.has(p.id) &&
+              !p.name.toLowerCase().includes('mgs') &&
+              !p.name.toLowerCase().includes('tycoon')
+          );
+          const existingIds = new Set(cleaned.map(p => p.id));
           const newProducts = initialProducts.filter(p => !existingIds.has(p.id));
-          const merged = [...existing, ...newProducts];
+          const merged = [...cleaned, ...newProducts];
           localStorage.setItem('arms_products', JSON.stringify(merged));
           return merged;
         } catch {
@@ -129,7 +146,28 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [purchases, setPurchases] = useState<Purchase[]>(() => {
+    const savedVersion = localStorage.getItem('arms_seed_version_pur');
     const saved = localStorage.getItem('arms_purchases');
+
+    if (savedVersion !== CURRENT_SEED_VERSION) {
+      localStorage.setItem('arms_seed_version_pur', CURRENT_SEED_VERSION);
+      if (saved) {
+        try {
+          const existingPurchases: Purchase[] = JSON.parse(saved);
+          const cleanedPurchases = existingPurchases.filter(
+            p =>
+              p.supplierId !== 'sup-5' &&
+              !p.supplierName.toLowerCase().includes('mgs') &&
+              !p.supplierName.toLowerCase().includes('tycoon')
+          );
+          localStorage.setItem('arms_purchases', JSON.stringify(cleanedPurchases));
+          return cleanedPurchases;
+        } catch {
+          return initialPurchases;
+        }
+      }
+      return initialPurchases;
+    }
     return saved ? JSON.parse(saved) : initialPurchases;
   });
 
