@@ -15,8 +15,10 @@ import {
   X,
   Tag,
   Building,
+  Sparkles,
 } from 'lucide-react';
 import { Product, Supplier } from '../types';
+import { useAutoHindi } from '../utils/transliterate';
 
 export const MasterSetup: React.FC = () => {
   const { language, t } = useLanguage();
@@ -92,6 +94,51 @@ export const MasterSetup: React.FC = () => {
     shortCode: '',
   });
 
+  // Auto-transliterate Product Name (English -> Hindi)
+  const {
+    isTranslating: isTranslatingProd,
+    handleManualHindiChange: handleManualProdHi,
+    resetManual: resetProdManual,
+  } = useAutoHindi(newProd.name, val => {
+    setNewProd(prev => ({ ...prev, nameHi: val }));
+  });
+
+  // Auto-transliterate Village Name (English -> Hindi)
+  const {
+    isTranslating: isTranslatingVil,
+    handleManualHindiChange: handleManualVilHi,
+    resetManual: resetVilManual,
+  } = useAutoHindi(newVil.name, val => {
+    setNewVil(prev => ({ ...prev, nameHi: val }));
+  });
+
+  // Auto-transliterate District Name (English -> Hindi)
+  const {
+    isTranslating: isTranslatingDist,
+    handleManualHindiChange: handleManualDistHi,
+    resetManual: resetDistManual,
+  } = useAutoHindi(newDist.name, val => {
+    setNewDist(prev => ({ ...prev, nameHi: val }));
+  });
+
+  // Auto-transliterate Category Name (English -> Hindi)
+  const {
+    isTranslating: isTranslatingCat,
+    handleManualHindiChange: handleManualCatHi,
+    resetManual: resetCatManual,
+  } = useAutoHindi(newCat.name, val => {
+    setNewCat(prev => ({ ...prev, nameHi: val }));
+  });
+
+  // Auto-transliterate Unit Name (English -> Hindi)
+  const {
+    isTranslating: isTranslatingUnit,
+    handleManualHindiChange: handleManualUnitHi,
+    resetManual: resetUnitManual,
+  } = useAutoHindi(newUnitData.name, val => {
+    setNewUnitData(prev => ({ ...prev, nameHi: val }));
+  });
+
   const handleCreateProduct = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProd.name) return;
@@ -152,6 +199,7 @@ export const MasterSetup: React.FC = () => {
     if (!newDist.name) return;
     const created = addDistrict(newDist);
     setNewDist({ name: '', nameHi: '' });
+    resetDistManual();
     setNewVil(prev => ({ ...prev, districtId: created.id }));
     setShowDistrictModal(false);
   };
@@ -696,13 +744,19 @@ export const MasterSetup: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-medium mb-1">{t.productName} (हिन्दी)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-700 font-medium">{t.productName} (हिन्दी)</label>
+                    <span className="text-[11px] font-semibold text-emerald-600 flex items-center space-x-1">
+                      <Sparkles className="w-3 h-3" />
+                      <span>{isTranslatingProd ? (language === 'hi' ? 'अनुवाद हो रहा है...' : 'Translating...') : (language === 'hi' ? 'ऑटो हिन्दी (Auto-Hindi)' : 'Auto-Hindi')}</span>
+                    </span>
+                  </div>
                   <input
                     type="text"
                     value={newProd.nameHi}
-                    onChange={e => setNewProd({ ...newProd, nameHi: e.target.value })}
+                    onChange={e => handleManualProdHi(e.target.value)}
                     className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                    placeholder="उदा. जिंक सल्फेट 33%"
+                    placeholder={language === 'hi' ? 'उदा. जिंक सल्फेट 33% (अंग्रेजी से स्वतः भरा जाएगा)' : 'e.g. जिंक सल्फेट 33% (Auto-fills from English)'}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -868,13 +922,19 @@ export const MasterSetup: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-medium mb-1">{t.villageName} (हिन्दी)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-700 font-medium">{t.villageName} (हिन्दी)</label>
+                    <span className="text-[11px] font-semibold text-emerald-600 flex items-center space-x-1">
+                      <Sparkles className="w-3 h-3" />
+                      <span>{isTranslatingVil ? (language === 'hi' ? 'अनुवाद हो रहा है...' : 'Translating...') : (language === 'hi' ? 'ऑटो हिन्दी (Auto-Hindi)' : 'Auto-Hindi')}</span>
+                    </span>
+                  </div>
                   <input
                     type="text"
                     value={newVil.nameHi}
-                    onChange={e => setNewVil({ ...newVil, nameHi: e.target.value })}
+                    onChange={e => handleManualVilHi(e.target.value)}
                     className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                    placeholder="उदा. रामपुर"
+                    placeholder={language === 'hi' ? 'उदा. रामपुर (अंग्रेजी से स्वतः भरा जाएगा)' : 'e.g. रामपुर (Auto-fills from English)'}
                   />
                 </div>
                 <div>
@@ -933,12 +993,19 @@ export const MasterSetup: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-medium mb-1">{t.categoryName} (हिन्दी)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-700 font-medium">{t.categoryName} (हिन्दी)</label>
+                    <span className="text-[11px] font-semibold text-emerald-600 flex items-center space-x-1">
+                      <Sparkles className="w-3 h-3" />
+                      <span>{isTranslatingCat ? (language === 'hi' ? 'अनुवाद हो रहा है...' : 'Translating...') : (language === 'hi' ? 'ऑटो हिन्दी (Auto-Hindi)' : 'Auto-Hindi')}</span>
+                    </span>
+                  </div>
                   <input
                     type="text"
                     value={newCat.nameHi}
-                    onChange={e => setNewCat({ ...newCat, nameHi: e.target.value })}
+                    onChange={e => handleManualCatHi(e.target.value)}
                     className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    placeholder={language === 'hi' ? 'उदा. कीटनाशक दवाइयां (अंग्रेजी से स्वतः भरा जाएगा)' : 'e.g. Pesticides (Auto-fills from English)'}
                   />
                 </div>
                 <div className="flex justify-end space-x-2 pt-3">
@@ -963,7 +1030,7 @@ export const MasterSetup: React.FC = () => {
             {activeTab === 'units' && (
               <form onSubmit={handleCreateUnit} className="space-y-3 text-xs sm:text-sm">
                 <div>
-                  <label className="block text-slate-700 font-medium mb-1">{t.unitName} *</label>
+                  <label className="block text-slate-700 font-medium mb-1">{t.unitName} (English) *</label>
                   <input
                     type="text"
                     required
@@ -971,6 +1038,22 @@ export const MasterSetup: React.FC = () => {
                     onChange={e => setNewUnitData({ ...newUnitData, name: e.target.value })}
                     className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     placeholder="e.g. Kilogram (Kg)"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-700 font-medium">{t.unitName} (हिन्दी)</label>
+                    <span className="text-[11px] font-semibold text-emerald-600 flex items-center space-x-1">
+                      <Sparkles className="w-3 h-3" />
+                      <span>{isTranslatingUnit ? (language === 'hi' ? 'अनुवाद हो रहा है...' : 'Translating...') : (language === 'hi' ? 'ऑटो हिन्दी (Auto-Hindi)' : 'Auto-Hindi')}</span>
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={newUnitData.nameHi}
+                    onChange={e => handleManualUnitHi(e.target.value)}
+                    className="w-full p-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    placeholder={language === 'hi' ? 'उदा. किलोग्राम (अंग्रेजी से स्वतः भरा जाएगा)' : 'e.g. किलोग्राम (Auto-fills from English)'}
                   />
                 </div>
                 <div>
@@ -1038,15 +1121,21 @@ export const MasterSetup: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-medium mb-1">
-                  {language === 'hi' ? 'ज़िले का नाम (हिन्दी)' : 'District Name (Hindi)'}
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-slate-700 font-medium">
+                    {language === 'hi' ? 'ज़िले का नाम (हिन्दी)' : 'District Name (Hindi)'}
+                  </label>
+                  <span className="text-[11px] font-semibold text-blue-600 flex items-center space-x-1">
+                    <Sparkles className="w-3 h-3" />
+                    <span>{isTranslatingDist ? (language === 'hi' ? 'अनुवाद हो रहा है...' : 'Translating...') : (language === 'hi' ? 'ऑटो हिन्दी (Auto-Hindi)' : 'Auto-Hindi')}</span>
+                  </span>
+                </div>
                 <input
                   type="text"
                   value={newDist.nameHi}
-                  onChange={e => setNewDist({ ...newDist, nameHi: e.target.value })}
+                  onChange={e => handleManualDistHi(e.target.value)}
                   className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="उदा. अलीगढ़, आगरा, मथुरा"
+                  placeholder={language === 'hi' ? 'उदा. अलीगढ़ (अंग्रेजी से स्वतः भरा जाएगा)' : 'e.g. अलीगढ़ (Auto-fills from English)'}
                 />
               </div>
 

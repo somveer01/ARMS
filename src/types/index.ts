@@ -76,7 +76,9 @@ export interface Village {
 export interface Farmer {
   id: string;
   name: string;
+  nameHi?: string;
   fatherName?: string;
+  fatherNameHi?: string;
   mobile: string;
   districtId: string;
   villageId: string;

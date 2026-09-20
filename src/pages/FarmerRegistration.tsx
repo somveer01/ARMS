@@ -10,8 +10,10 @@ import {
   CheckCircle,
   Share2,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import { Farmer } from '../types';
+import { useAutoHindi } from '../utils/transliterate';
 
 interface FarmerRegistrationProps {
   onSelectFarmerForSale?: (farmer: Farmer) => void;
@@ -32,13 +34,29 @@ export const FarmerRegistration: React.FC<FarmerRegistrationProps> = ({
 
   // Form state
   const [name, setName] = useState('');
+  const [nameHi, setNameHi] = useState('');
   const [fatherName, setFatherName] = useState('');
+  const [fatherNameHi, setFatherNameHi] = useState('');
   const [mobile, setMobile] = useState('');
   const [districtId, setDistrictId] = useState(districts[0]?.id || '');
   const [villageId, setVillageId] = useState(villages[0]?.id || '');
   const [landAcreage, setLandAcreage] = useState<number>(0);
   const [creditLimit, setCreditLimit] = useState<number>(50000);
   const [openingDue, setOpeningDue] = useState<number>(0);
+
+  // Auto-transliterate Farmer Name (English -> Hindi)
+  const {
+    isTranslating: isTranslatingName,
+    handleManualHindiChange: handleManualNameHi,
+    resetManual: resetNameManual,
+  } = useAutoHindi(name, val => setNameHi(val));
+
+  // Auto-transliterate Father Name (English -> Hindi)
+  const {
+    isTranslating: isTranslatingFather,
+    handleManualHindiChange: handleManualFatherHi,
+    resetManual: resetFatherManual,
+  } = useAutoHindi(fatherName, val => setFatherNameHi(val));
 
   // Filter villages by selected district in form
   const formVillages = villages.filter(v => v.districtId === districtId);
@@ -49,7 +67,9 @@ export const FarmerRegistration: React.FC<FarmerRegistrationProps> = ({
 
     addFarmer({
       name,
+      nameHi,
       fatherName,
+      fatherNameHi,
       mobile,
       districtId,
       villageId,
@@ -64,7 +84,11 @@ export const FarmerRegistration: React.FC<FarmerRegistrationProps> = ({
 
     // Reset Form
     setName('');
+    setNameHi('');
+    resetNameManual();
     setFatherName('');
+    setFatherNameHi('');
+    resetFatherManual();
     setMobile('');
     setLandAcreage(0);
     setOpeningDue(0);
@@ -76,6 +100,7 @@ export const FarmerRegistration: React.FC<FarmerRegistrationProps> = ({
     const q = searchTerm.toLowerCase();
     const matchesSearch =
       f.name.toLowerCase().includes(q) ||
+      (f.nameHi && f.nameHi.toLowerCase().includes(q)) ||
       f.mobile.includes(q) ||
       (vil?.name.toLowerCase().includes(q) || (vil?.nameHi && vil?.nameHi.includes(q)));
     const matchesVillage = selectedVillageFilter === 'all' || f.villageId === selectedVillageFilter;
@@ -200,9 +225,18 @@ export const FarmerRegistration: React.FC<FarmerRegistrationProps> = ({
                   <tr key={f.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-3.5 text-slate-400">{idx + 1}</td>
                     <td className="p-3.5">
-                      <p className="font-bold text-slate-900">{f.name}</p>
-                      {f.fatherName && (
-                        <p className="text-[11px] text-slate-500">S/o {f.fatherName}</p>
+                      <div className="flex items-center space-x-1.5 flex-wrap">
+                        <span className="font-bold text-slate-900">{f.name}</span>
+                        {f.nameHi && (
+                          <span className="text-xs text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded font-medium border border-emerald-200">
+                            {f.nameHi}
+                          </span>
+                        )}
+                      </div>
+                      {(f.fatherName || f.fatherNameHi) && (
+                        <p className="text-[11px] text-slate-500">
+                          S/o {f.fatherName} {f.fatherNameHi ? `(${f.fatherNameHi})` : ''}
+                        </p>
                       )}
                     </td>
                     <td className="p-3.5">
@@ -238,14 +272,14 @@ export const FarmerRegistration: React.FC<FarmerRegistrationProps> = ({
                           <button
                             onClick={() => {
                               const text = language === 'hi'
-                                ? `नमस्ते श्री ${f.name} जी, किसान कृषि केंद्र से आपका खाद-बीज का बकाया ₹${f.currentDue} शेष है। कृपया समय पर भुगतान करें। धन्यवाद!`
-                                : `Dear ${f.name}, friendly reminder from Kisan Agri Retail that your pending due is ₹${f.currentDue}. Kindly settle at your convenience.`;
-                              window.open(`https://wa.me/91${f.mobile.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+                                ? `नमस्ते ${f.nameHi || f.name} जी, आपका बकाया ₹${f.currentDue.toLocaleString('en-IN')} है। कृपया भुगतान करें। धन्यवाद।`
+                                : `Dear ${f.name}, reminder: pending dues ₹${f.currentDue.toLocaleString('en-IN')}. Please clear at earliest. Thank you.`;
+                              window.open(`https://wa.me/91${f.mobile}?text=${encodeURIComponent(text)}`, '_blank');
                             }}
-                            className="p-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs"
-                            title={t.whatsappReminderText}
+                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title={language === 'hi' ? 'व्हाट्सएप तगादा भेजें' : 'Send WhatsApp Reminder'}
                           >
-                            <Share2 className="w-3.5 h-3.5" />
+                            <Share2 className="w-4 h-4" />
                           </button>
                         )}
                         {onSelectFarmerForSale && (
@@ -284,9 +318,12 @@ export const FarmerRegistration: React.FC<FarmerRegistrationProps> = ({
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3.5 text-xs sm:text-sm">
+              {/* Farmer Name: English & Auto Hindi */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-medium mb-1">{t.farmerName} *</label>
+                  <label className="block text-slate-700 font-medium mb-1">
+                    {t.farmerName} (English) *
+                  </label>
                   <input
                     type="text"
                     required
@@ -297,12 +334,54 @@ export const FarmerRegistration: React.FC<FarmerRegistrationProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-medium mb-1">{t.fatherName}</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-700 font-medium">
+                      {t.farmerName} (हिन्दी)
+                    </label>
+                    <span className="text-[11px] font-semibold text-cyan-600 flex items-center space-x-1">
+                      <Sparkles className="w-3 h-3" />
+                      <span>{isTranslatingName ? (language === 'hi' ? 'अनुवाद...' : 'Translating...') : (language === 'hi' ? 'ऑटो हिन्दी' : 'Auto-Hindi')}</span>
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={nameHi}
+                    onChange={e => handleManualNameHi(e.target.value)}
+                    placeholder={language === 'hi' ? 'उदा. रामेश्वर शर्मा (स्वतः भरा जाएगा)' : 'e.g. रामेश्वर शर्मा (Auto-fills)'}
+                    className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Father Name: English & Auto Hindi */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-medium mb-1">
+                    {t.fatherName} (English)
+                  </label>
                   <input
                     type="text"
                     value={fatherName}
                     onChange={e => setFatherName(e.target.value)}
                     placeholder="e.g. Sh. Kashi Ram"
+                    className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-700 font-medium">
+                      {t.fatherName} (हिन्दी)
+                    </label>
+                    <span className="text-[11px] font-semibold text-cyan-600 flex items-center space-x-1">
+                      <Sparkles className="w-3 h-3" />
+                      <span>{isTranslatingFather ? (language === 'hi' ? 'अनुवाद...' : 'Translating...') : (language === 'hi' ? 'ऑटो हिन्दी' : 'Auto-Hindi')}</span>
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={fatherNameHi}
+                    onChange={e => handleManualFatherHi(e.target.value)}
+                    placeholder={language === 'hi' ? 'उदा. काशी राम (स्वतः भरा जाएगा)' : 'e.g. काशी राम (Auto-fills)'}
                     className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                   />
                 </div>
