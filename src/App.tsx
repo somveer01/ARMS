@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LanguageProvider } from './context/LanguageContext';
 import { DataProvider } from './context/DataContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -20,11 +20,65 @@ import { Reports } from './pages/Reports';
 import { Profile } from './pages/Profile';
 import { Farmer } from './types';
 
+const VALID_TABS = [
+  'dashboard',
+  'master-setup',
+  'purchase-entry',
+  'inventory-stock',
+  'farmer-registration',
+  'sales-entry',
+  'payment-entry',
+  'reports',
+  'profile',
+];
+
+const getInitialTab = (): string => {
+  // 1. Check URL hash first (e.g. #master-setup)
+  const hash = window.location.hash.replace(/^#\/?/, '');
+  if (hash && VALID_TABS.includes(hash)) {
+    return hash;
+  }
+  // 2. Check saved localStorage
+  const savedTab = localStorage.getItem('arms_active_tab');
+  if (savedTab && VALID_TABS.includes(savedTab)) {
+    return savedTab;
+  }
+  return 'dashboard';
+};
+
 export const AppContent: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTabState] = useState<string>(getInitialTab);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [selectedFarmerForAction, setSelectedFarmerForAction] = useState<Farmer | null>(null);
+
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    localStorage.setItem('arms_active_tab', tab);
+    if (window.location.hash !== `#${tab}`) {
+      window.location.hash = tab;
+    }
+  };
+
+  // Sync hash changes (e.g. Browser Back/Forward buttons)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      if (hash && VALID_TABS.includes(hash)) {
+        setActiveTabState(hash);
+        localStorage.setItem('arms_active_tab', hash);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Update initial hash if not set
+  useEffect(() => {
+    if (!window.location.hash && activeTab) {
+      window.location.hash = activeTab;
+    }
+  }, [activeTab]);
 
   if (!isAuthenticated) {
     return (
